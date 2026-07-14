@@ -130,7 +130,7 @@ export default function Home() {
           <span>desk</span>
         </div>
         <a
-          href="#cta"
+          href="mailto:advaith@getopendesk.com?subject=Interested%20in%20an%20Opendesk%20pilot"
           className="nav-cta"
           style={{
             fontSize: 14,
@@ -232,7 +232,7 @@ export default function Home() {
             }}
           >
             <a
-              href="#cta"
+              href="mailto:advaith@getopendesk.com?subject=Interested%20in%20an%20Opendesk%20pilot"
               className="btn-primary"
               style={{
                 display: "inline-block",
@@ -623,8 +623,8 @@ export default function Home() {
             </div>
             <p style={{ fontSize: 14.5, lineHeight: 1.6, color: "#9A9CA3", margin: "0 0 14px" }}>
               Building Opendesk after working alongside Australian clinics —
-              answering the enquiries they can&apos;t. Based in Sydney,
-              talking to clinic owners every week.
+              answering the enquiries they can&apos;t. Talking to clinic
+              owners every week.
             </p>
             <a
               href="mailto:advaith@getopendesk.com"
@@ -684,7 +684,7 @@ export default function Home() {
           Five founding-clinic pilot spots remain for this quarter.
         </p>
         <a
-          href="#email-signup"
+          href="mailto:advaith@getopendesk.com?subject=Interested%20in%20an%20Opendesk%20pilot"
           className="btn-primary"
           style={{
             position: "relative",
@@ -713,8 +713,7 @@ export default function Home() {
           }}
         >
           <span style={{ fontSize: 13.5, color: "#6C6E75" }}>
-            Not ready to talk? Leave your name and email and we&apos;ll reach
-            out.
+            Not ready to talk? Leave your details and we&apos;ll reach out.
           </span>
           <EmailSignupForm />
         </div>
@@ -753,7 +752,10 @@ export default function Home() {
             <a href="#" className="footer-link">
               Privacy
             </a>
-            <a href="#" className="footer-link">
+            <a
+              href="mailto:advaith@getopendesk.com"
+              className="footer-link"
+            >
               Contact
             </a>
           </div>
