@@ -59,6 +59,15 @@ a {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.btn-outline {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-outline:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .btn-primary {
   transition: opacity 0.2s, transform 0.15s;
 }

@@ -1,0 +1,556 @@
+/* ---------- Opendesk chrome (dark, matches main site) ---------- */
+
+.page {
+  min-height: 100vh;
+  background: #0b0c0e;
+  color: #ededef;
+  position: relative;
+}
+
+/* ---------- device frame ---------- */
+
+.frame {
+  position: relative;
+  height: 680px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.frameScroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 700px) {
+  .frame {
+    height: 600px;
+    border-radius: 14px;
+  }
+}
+
+/* ---------- fictional clinic site (Lumen Aesthetics) ---------- */
+
+.lumenSite {
+  --ivory: #faf8f4;
+  --sand: #f0ebe2;
+  --charcoal: #23211e;
+  --stone: #6f6a61;
+  --gold: #b0906a;
+  font-family: var(--font-inter-demo), "Inter", sans-serif;
+  background: var(--ivory);
+  color: var(--charcoal);
+}
+
+.clinicNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 40px;
+  background: var(--ivory);
+  border-bottom: 1px solid #e8e2d6;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.clinicBrand {
+  font-family: var(--font-cormorant), serif;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.clinicLinks {
+  display: flex;
+  gap: 28px;
+  font-size: 13px;
+  color: var(--stone);
+  letter-spacing: 0.04em;
+}
+.clinicBookBtn {
+  border: 1px solid var(--charcoal);
+  padding: 10px 20px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: default;
+  background: transparent;
+  font-family: inherit;
+}
+
+.clinicHero {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  padding: 48px 40px;
+  gap: 36px;
+}
+.clinicHeroTitle {
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: clamp(32px, 4.5vw, 48px);
+  line-height: 1.1;
+  margin-bottom: 18px;
+}
+.clinicHeroEm {
+  font-style: italic;
+  color: var(--gold);
+}
+.clinicHeroText {
+  color: var(--stone);
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 42ch;
+  margin-bottom: 24px;
+}
+.clinicHeroCta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.clinicHeroPrimary {
+  background: var(--charcoal);
+  color: var(--ivory);
+  border: none;
+  padding: 13px 24px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: default;
+  font-family: inherit;
+}
+.clinicHeroGhost {
+  background: transparent;
+  border: 1px solid #d8d1c2;
+  padding: 13px 24px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: default;
+  color: var(--charcoal);
+  font-family: inherit;
+}
+.clinicHeroVisual {
+  height: 300px;
+  border-radius: 160px 160px 12px 12px;
+  background: radial-gradient(120% 90% at 30% 20%, #e9ddca 0%, transparent 60%),
+    radial-gradient(100% 100% at 80% 90%, #cdb89a 0%, transparent 55%),
+    linear-gradient(160deg, #efe7d8, #dccdb4);
+  position: relative;
+}
+
+.clinicTreatments {
+  padding: 20px 40px 60px;
+}
+.clinicEyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+.clinicTreatmentsTitle {
+  font-family: var(--font-cormorant), serif;
+  font-size: 28px;
+  font-weight: 500;
+  margin-bottom: 28px;
+}
+.treatGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.treatCard {
+  background: #fff;
+  border: 1px solid #ece6da;
+  padding: 24px 20px;
+}
+.treatCardTitle {
+  font-family: var(--font-cormorant), serif;
+  font-size: 19px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.treatCardText {
+  color: var(--stone);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.clinicFooter {
+  background: var(--charcoal);
+  color: #b8b2a6;
+  padding: 32px 40px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+}
+.clinicFooterBrand {
+  font-family: var(--font-cormorant), serif;
+  color: var(--ivory);
+  font-size: 16px;
+  letter-spacing: 0.12em;
+}
+
+@media (max-width: 700px) {
+  .clinicNav {
+    padding: 16px 20px;
+  }
+  .clinicLinks {
+    display: none;
+  }
+  .clinicHero {
+    grid-template-columns: 1fr;
+    padding: 32px 20px;
+  }
+  .clinicHeroVisual {
+    height: 180px;
+  }
+  .clinicTreatments {
+    padding: 12px 20px 40px;
+  }
+  .treatGrid {
+    grid-template-columns: 1fr;
+  }
+  .clinicFooter {
+    padding: 24px 20px;
+  }
+}
+
+/* ---------- Opendesk chat widget ---------- */
+
+.odBubble {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 20;
+  background: #23211e;
+  color: #fff;
+  border-radius: 999px;
+  padding: 14px 20px 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease;
+  max-width: 280px;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: var(--font-inter-demo), "Inter", sans-serif;
+}
+.odBubble:hover {
+  transform: translateY(-2px);
+}
+.odBubble.hidden {
+  display: none;
+}
+
+.pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
+  animation: odPulseKf 2s infinite;
+}
+@keyframes odPulseKf {
+  0% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(74, 222, 128, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+  }
+}
+
+.rotator {
+  position: relative;
+  overflow: hidden;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+.rotator span {
+  display: block;
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.rotatorOut {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.rotatorIn {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.odChat {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 21;
+  width: 340px;
+  height: 100%;
+  max-height: calc(100% - 40px);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-inter-demo), "Inter", sans-serif;
+  color: #23211e;
+}
+
+.odHeader {
+  background: #23211e;
+  color: white;
+  padding: 15px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.odAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #b0906a, #d9c3a3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+  font-family: var(--font-cormorant), serif;
+  flex-shrink: 0;
+}
+.odHeaderTitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+.odHeaderStatus {
+  font-size: 11px;
+  color: #b9b4aa;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.odDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+}
+.odClose {
+  margin-left: auto;
+  cursor: pointer;
+  font-size: 19px;
+  color: #b9b4aa;
+  line-height: 1;
+}
+
+.odBody {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background: #f8f7f4;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.odMsg {
+  max-width: 84%;
+  padding: 10px 13px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  animation: odFadeKf 0.3s ease;
+}
+@keyframes odFadeKf {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.odMsgBot {
+  background: #fff;
+  border: 1px solid #eae7e0;
+  border-bottom-left-radius: 4px;
+  align-self: flex-start;
+}
+.odMsgUser {
+  background: #23211e;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+  align-self: flex-end;
+}
+.odMsgNote {
+  align-self: center;
+  background: transparent;
+  font-size: 10.5px;
+  color: #a09a8e;
+  text-align: center;
+  max-width: 100%;
+  padding: 2px;
+}
+
+.odSlots {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: flex-start;
+  max-width: 84%;
+}
+.odSlot {
+  background: #fff;
+  border: 1.5px solid #b0906a;
+  color: #8a6d48;
+  padding: 10px 13px;
+  border-radius: 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.odSlot:hover {
+  background: #b0906a;
+  color: #fff;
+}
+
+.odChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 4px 16px 12px;
+  background: #f8f7f4;
+}
+.odChip {
+  background: #fff;
+  border: 1px solid #e3ded3;
+  color: #4a463e;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.odChip:hover {
+  border-color: #b0906a;
+  color: #8a6d48;
+}
+
+.odTyping {
+  display: flex;
+  gap: 4px;
+  padding: 11px 14px;
+  background: #fff;
+  border: 1px solid #eae7e0;
+  border-radius: 14px;
+  border-bottom-left-radius: 4px;
+  align-self: flex-start;
+  width: fit-content;
+}
+.odTyping span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c6c0b3;
+  animation: odBounceKf 1.2s infinite;
+}
+.odTyping span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.odTyping span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes odBounceKf {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.odLead {
+  background: #fff;
+  border: 1px solid #eae7e0;
+  border-radius: 14px;
+  padding: 14px;
+  align-self: flex-start;
+  max-width: 88%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.odLead input {
+  border: 1px solid #e3ded3;
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+.odLead input:focus {
+  border-color: #b0906a;
+}
+.odLead button {
+  background: #23211e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.odNotice {
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #8a6d48;
+  background: #faf3ea;
+  border-top: 1px solid #eee1cf;
+  padding: 8px 16px;
+  flex-shrink: 0;
+}
+
+.odFoot {
+  text-align: center;
+  font-size: 9.5px;
+  color: #b3ada0;
+  padding: 8px 14px 10px;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+  .odChat {
+    width: calc(100% - 24px);
+    right: 12px;
+    bottom: 12px;
+  }
+  .odBubble {
+    right: 12px;
+    bottom: 12px;
+    max-width: calc(100% - 24px);
+  }
+}

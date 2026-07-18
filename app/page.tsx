@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import ScrollReveal from "./ScrollReveal";
 import EmailSignupForm from "./EmailSignupForm";
 
@@ -247,6 +248,21 @@ export default function Home() {
             >
               Book a pilot call
             </a>
+            <Link
+              href="/demo"
+              className="btn-outline"
+              style={{
+                display: "inline-block",
+                color: "#EDEDEF",
+                fontSize: 15,
+                fontWeight: 600,
+                padding: "14px 28px",
+                borderRadius: 10,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              Try the live demo
+            </Link>
             <a
               href="#email-signup"
               className="link-underline"
