@@ -5,108 +5,165 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Opendesk — Inventory Intelligence for Cosmetic Clinics</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Archivo:wght@400;500;600;700&display=swap');
 
   :root{
-    --bg:#f6f7f9; --panel:#fff; --ink:#141719; --muted:#6b7280; --line:#e6e8ec;
-    --accent:#0f766e; --accent-soft:#e8f4f2;
-    --danger:#b42318; --danger-soft:#fef3f2;
-    --warn:#b54708; --warn-soft:#fffaeb;
-    --ok:#067647; --ok-soft:#ecfdf3;
+    --bone:#F6F1E8; --paper:#FFFEFB; --ink:#241E18; --taupe:#8C8074; --taupe-soft:#C9BFB0; --line:#E7DFD2;
+    --clay:#A6512C; --clay-deep:#874022; --clay-soft:#F1E1D2;
+    --danger:#8C3327; --danger-soft:#F4E1DA;
+    --warn:#8F6119; --warn-soft:#F6ECD6;
+    --good:#4B5E3A; --good-soft:#E7EBDC;
+    --neutral-soft:#EFEAE0;
+    --font-display:'Fraunces',serif; --font-body:'Archivo',sans-serif;
+    --radius-card:14px; --radius-btn:10px;
+    --shadow-card:0 1px 2px rgba(36,30,24,.05), 0 8px 20px -14px rgba(36,30,24,.18);
   }
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+  html{background:var(--bone)}
+  body{font-family:var(--font-body);background:var(--bone);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  }
+
+  a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,.rcard-pick:focus-visible{
+    outline:2px solid var(--clay); outline-offset:2px; border-radius:6px;
+  }
 
   /* shell */
-  .top{background:#fff;border-bottom:1px solid var(--line);padding:0 24px;display:flex;align-items:center;gap:28px;height:56px;position:sticky;top:0;z-index:20}
-  .brand{font-weight:700;font-size:15px;letter-spacing:-.01em}
-  .brand span{color:var(--accent)}
-  .clinic{font-size:12.5px;color:var(--muted);border-left:1px solid var(--line);padding-left:16px}
-  .tabs{display:flex;gap:2px;margin-left:auto}
-  .tab{padding:8px 14px;border-radius:7px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border:none;background:none;font-family:inherit}
-  .tab:hover{background:var(--bg);color:var(--ink)}
-  .tab.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .top{background:var(--paper);border-bottom:1px solid var(--line);padding:14px 24px;display:flex;align-items:center;gap:22px;position:sticky;top:0;z-index:20;flex-wrap:wrap}
+  .brand{font-family:var(--font-display);font-weight:600;font-size:19px;letter-spacing:-.01em;color:var(--ink)}
+  .brand span{color:var(--clay)}
+  .clinic{font-size:12px;color:var(--taupe);border-left:1px solid var(--line);padding-left:16px;white-space:nowrap}
+  .tabs{display:flex;gap:4px;margin-left:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{padding:9px 13px;border-radius:8px;font-size:13px;font-weight:600;color:var(--taupe);cursor:pointer;border:none;background:none;font-family:var(--font-body);white-space:nowrap;border-bottom:2px solid transparent;transition:color .15s}
+  .tab:hover{color:var(--ink)}
+  .tab.on{color:var(--clay-deep);border-bottom-color:var(--clay)}
 
-  .wrap{max-width:1180px;margin:0 auto;padding:26px 24px 70px}
+  @media(max-width:760px){
+    .top{padding:12px 16px;gap:10px}
+    .clinic{display:none}
+    .tabs{width:100%;margin-left:0;order:3;padding-top:2px}
+  }
+
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 80px}
+  @media(max-width:600px){ .wrap{padding:20px 16px 64px} }
+
   .view{display:none}
-  .view.on{display:block;animation:fade .25s ease forwards}
-  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .view.on{display:block;animation:fade .3s ease forwards}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-  h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
-  .sub{color:var(--muted);font-size:13px;margin-top:3px}
-  .head{margin-bottom:20px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  h1{font-family:var(--font-display);font-size:26px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--taupe);font-size:13.5px;margin-top:5px;line-height:1.5}
+  .head{margin-bottom:24px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
 
-  /* cards */
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
-  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px 17px}
-  .kpi .n{font-size:24px;font-weight:700;letter-spacing:-.02em}
-  .kpi .l{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}
-  .kpi .t{font-size:11.5px;font-weight:600;margin-top:8px}
-  .kpi.alert{border-color:#f3c6c1;background:var(--danger-soft)}
-  .kpi.alert .n,.kpi.alert .t{color:var(--danger)}
-  .kpi.warn{border-color:#f2dfae;background:var(--warn-soft)}
-  .kpi.warn .n,.kpi.warn .t{color:var(--warn)}
-  .kpi.good .t{color:var(--ok)}
+  /* buttons */
+  .btn{border:1px solid var(--line);background:var(--paper);padding:10px 16px;border-radius:var(--radius-btn);font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font-body);color:var(--ink);min-height:40px;appearance:none;-webkit-appearance:none;transition:border-color .15s,background .15s}
+  .btn:hover{border-color:var(--taupe-soft);background:#fff}
+  .btn.p{background:var(--clay);border-color:var(--clay);color:#fff}
+  .btn.p:hover{background:var(--clay-deep);border-color:var(--clay-deep)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
 
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-bottom:18px}
-  .panel-h{padding:14px 17px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
-  .panel-h h2{font-size:14px;font-weight:600}
-  .panel-h .note{font-size:12px;color:var(--muted)}
+  /* KPI stat strip */
+  .kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden;margin-bottom:24px}
+  .kpi-stat{padding:22px 22px;border-left:1px solid var(--line)}
+  .kpi-stat:first-child{border-left:none}
+  .kpi-stat::before{content:'';display:block;width:22px;height:3px;border-radius:2px;margin-bottom:16px;background:var(--taupe-soft)}
+  .kpi-stat.k-danger::before{background:var(--danger)}
+  .kpi-stat.k-warn::before{background:var(--warn)}
+  .kpi-stat.k-good::before{background:var(--good)}
+  .kpi-num{font-family:var(--font-display);font-size:32px;font-weight:600;letter-spacing:-.02em;line-height:1}
+  .kpi-label{font-size:12px;color:var(--taupe);margin-top:10px;line-height:1.45}
+  .kpi-trend{font-size:11.5px;font-weight:600;margin-top:12px;color:var(--ink)}
+  .kpi-trend.k-danger{color:var(--danger)}
+  .kpi-trend.k-warn{color:var(--warn)}
+  .kpi-trend.k-good{color:var(--good)}
+
+  @media(max-width:760px){
+    .kpi-strip{grid-template-columns:1fr 1fr}
+    .kpi-stat{border-left:1px solid var(--line);border-top:none;padding:18px}
+    .kpi-stat:nth-child(2n+1){border-left:none}
+    .kpi-stat:nth-child(n+3){border-top:1px solid var(--line)}
+    .kpi-num{font-size:26px}
+  }
+
+  /* panels */
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden;margin-bottom:18px}
+  .panel-h{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .panel-h h2{font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:-.005em}
+  .panel-h .note{font-size:12px;color:var(--taupe)}
+  .panel-foot{padding:13px 20px;font-size:12px;color:var(--taupe);border-top:1px solid var(--line);line-height:1.55}
 
   table{width:100%;border-collapse:collapse}
-  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;padding:10px 17px;border-bottom:1px solid var(--line);background:#fbfbfc}
-  td{padding:12px 17px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:middle}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--taupe);font-weight:700;padding:11px 20px;border-bottom:1px solid var(--line);background:#FBF8F3}
+  td{padding:14px 20px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:middle;font-variant-numeric:tabular-nums}
   tr:last-child td{border-bottom:none}
-  tr.row:hover{background:#fafbfc}
-  .prod{font-weight:600}
-  .meta{font-size:11.5px;color:var(--muted);margin-top:2px}
+  tr.row{transition:box-shadow .12s}
+  tr.row:hover{box-shadow:inset 3px 0 0 var(--clay)}
+  .prod{font-weight:600;font-family:var(--font-body)}
+  .meta{font-size:11.5px;color:var(--taupe);margin-top:2px}
 
-  .pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;white-space:nowrap;font-variant-numeric:tabular-nums}
   .pill.red{background:var(--danger-soft);color:var(--danger)}
   .pill.amber{background:var(--warn-soft);color:var(--warn)}
-  .pill.green{background:var(--ok-soft);color:var(--ok)}
-  .pill.grey{background:#f2f3f5;color:var(--muted)}
+  .pill.green{background:var(--good-soft);color:var(--good)}
+  .pill.grey{background:var(--neutral-soft);color:var(--taupe)}
 
-  .bar{height:5px;background:#eef0f3;border-radius:99px;overflow:hidden;width:110px;margin-top:5px}
+  .bar{height:4px;background:var(--neutral-soft);border-radius:99px;overflow:hidden;width:110px;margin-top:6px}
   .bar i{display:block;height:100%;border-radius:99px}
 
-  .btn{border:1px solid var(--line);background:#fff;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink)}
-  .btn:hover{border-color:#cfd4db}
-  .btn.p{background:var(--accent);border-color:var(--accent);color:#fff}
-  .btn.p:hover{background:#0b5f58}
-  .btn:disabled{opacity:.5;cursor:not-allowed}
+  /* mobile: tables become stacked cards */
+  @media(max-width:720px){
+    table.responsive thead{display:none}
+    table.responsive, table.responsive tbody, table.responsive tr, table.responsive td{display:block;width:100%}
+    table.responsive tr.row{padding:14px 18px;border-bottom:1px solid var(--line)}
+    table.responsive tr.row:hover{box-shadow:none;background:#FBF8F3}
+    table.responsive td{padding:5px 0;border:none}
+    table.responsive td::before{content:attr(data-label);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--taupe-soft);margin-bottom:3px}
+    table.responsive td:empty{display:none}
+    table.responsive .bar{width:100%;max-width:180px}
+  }
 
-  /* recipes */
+  /* recipe / picker cards */
   .rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-  .rcard{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px 17px;cursor:pointer;transition:.15s}
-  .rcard:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(15,118,110,.07)}
-  .rcard.sel{border-color:var(--accent);background:var(--accent-soft)}
-  .rcard h3{font-size:14px;font-weight:600;margin-bottom:8px}
-  .rcard ul{list-style:none;font-size:12.5px;color:var(--muted);line-height:1.65}
-  .rcard .cost{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;font-weight:600;color:var(--accent)}
+  .rcard{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-card);padding:18px 19px;box-shadow:var(--shadow-card)}
+  .rcard h3{font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:9px;letter-spacing:-.005em}
+  .rcard ul{list-style:none;font-size:12.5px;color:var(--taupe);line-height:1.7}
+  .rcard .cost{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--clay-deep)}
+
+  .rcard-pick{display:block;width:100%;text-align:left;cursor:pointer;font-family:var(--font-body);appearance:none;-webkit-appearance:none;transition:border-color .15s,box-shadow .15s,background .15s}
+  .rcard-pick:hover{border-color:var(--clay)}
+  .rcard-pick.sel{border-color:var(--clay);background:var(--clay-soft)}
+  .rcard-pick .count{font-size:12px;color:var(--taupe)}
+
+  @media(max-width:760px){ .rgrid{grid-template-columns:1fr} }
 
   /* form fields */
-  .field{border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff}
-  .field:focus{outline:none;border-color:var(--accent)}
-  .flabel{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--muted)}
+  .field{border:1px solid var(--line);border-radius:var(--radius-btn);padding:10px 13px;font-size:13.5px;font-family:var(--font-body);color:var(--ink);background:var(--paper);min-height:42px;width:100%}
+  .field:focus{border-color:var(--clay)}
+  .flabel{display:flex;flex-direction:column;gap:7px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--taupe)}
 
   /* log */
-  .logbox{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:20px}
-  .deduct{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;display:none}
+  .logbox{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:22px}
+  .section-label{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--taupe);margin-bottom:12px}
+  .deduct{margin-top:18px;border-top:1px solid var(--line);padding-top:18px;display:none}
   .deduct.show{display:block}
-  .dline{display:flex;align-items:center;justify-content:space-between;padding:9px 0;font-size:13.5px;border-bottom:1px solid #f2f3f5;opacity:0;transform:translateX(-6px);animation:slide .35s ease forwards}
+  .dline{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;font-size:13.5px;border-bottom:1px solid var(--neutral-soft);opacity:0;transform:translateX(-6px);animation:slide .35s ease forwards}
   @keyframes slide{to{opacity:1;transform:none}}
-  .dline .from{color:var(--muted);font-size:12.5px}
-  .dline b{color:var(--danger)}
-  .done{margin-top:14px;padding:12px 14px;background:var(--ok-soft);border:1px solid #b7e4c7;border-radius:9px;color:var(--ok);font-size:13px;font-weight:600;display:none}
-  .done.show{display:block;animation:fade .3s ease}
+  .dline .from{color:var(--taupe);font-size:12px;margin-top:2px}
+  .dline b{color:var(--danger);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .done{margin-top:16px;padding:14px 16px;background:var(--good-soft);border:1px solid #cfd9c2;border-radius:var(--radius-btn);color:var(--good);font-size:13px;font-weight:600;display:none;line-height:1.5}
+  .done.show{display:block;animation:fade .3s ease forwards}
 
-  .foot{text-align:center;font-size:11.5px;color:#9aa0aa;margin-top:26px;border-top:1px dashed var(--line);padding-top:16px}
+  .foot{text-align:center;font-size:11.5px;color:var(--taupe-soft);margin-top:30px;border-top:1px dashed var(--line);padding-top:18px}
+
+  /* ---- signature: margin contribution ledger ---- */
+  .ledger-row{background:linear-gradient(to right, var(--clay-soft) var(--pct,0%), transparent var(--pct,0%))}
+  .ledger-total{font-family:var(--font-display);font-size:17px;font-weight:600;color:var(--clay-deep);letter-spacing:-.01em}
+  .ledger-name{font-family:var(--font-display);font-size:15px;font-weight:600}
 
   @media(max-width:820px){
-    .kpis{grid-template-columns:repeat(2,1fr)}
-    .rgrid{grid-template-columns:1fr}
-    .tabs{overflow-x:auto}
     table{font-size:12.5px}
   }
 </style>
@@ -138,26 +195,26 @@
     <button class="btn">Export month</button>
   </div>
 
-  <div class="kpis">
-    <div class="kpi alert">
-      <div class="n">$1,840</div>
-      <div class="l">Stock expiring<br>within 30 days</div>
-      <div class="t">▲ 3 items — use first</div>
+  <div class="kpi-strip">
+    <div class="kpi-stat k-danger">
+      <div class="kpi-num">$1,840</div>
+      <div class="kpi-label">Stock expiring within 30 days</div>
+      <div class="kpi-trend k-danger">▲ 3 items — use first</div>
     </div>
-    <div class="kpi warn">
-      <div class="n">4</div>
-      <div class="l">Items below<br>reorder point</div>
-      <div class="t">Order by Thursday</div>
+    <div class="kpi-stat k-warn">
+      <div class="kpi-num">4</div>
+      <div class="kpi-label">Items below reorder point</div>
+      <div class="kpi-trend k-warn">Order by Thursday</div>
     </div>
-    <div class="kpi">
-      <div class="n">$26,410</div>
-      <div class="l">Current stock<br>on hand</div>
-      <div class="t" style="color:var(--muted)">Across 38 line items</div>
+    <div class="kpi-stat">
+      <div class="kpi-num">$26,410</div>
+      <div class="kpi-label">Current stock on hand</div>
+      <div class="kpi-trend" style="color:var(--taupe)">Across 38 line items</div>
     </div>
-    <div class="kpi good">
-      <div class="n">2.1%</div>
-      <div class="l">Wastage rate<br>this quarter</div>
-      <div class="t">▼ from 6.4% last quarter</div>
+    <div class="kpi-stat k-good">
+      <div class="kpi-num">2.1%</div>
+      <div class="kpi-label">Wastage rate this quarter</div>
+      <div class="kpi-trend k-good">▼ from 6.4% last quarter</div>
     </div>
   </div>
 
@@ -166,32 +223,32 @@
       <h2>Expiry risk — use these first</h2>
       <span class="note">Sorted by days remaining</span>
     </div>
-    <table>
+    <table class="responsive">
       <thead><tr><th>Product</th><th>Batch</th><th>Expires</th><th>On hand</th><th>Value at risk</th><th></th></tr></thead>
       <tbody>
         <tr class="row">
-          <td><div class="prod">Neuromodulator 100u</div><div class="meta">Supplier: Ardent Medical</div></td>
-          <td>B-4471</td>
-          <td><span class="pill red">11 days</span></td>
-          <td>3 vials</td>
-          <td>$960</td>
-          <td><button class="btn">Prioritise</button></td>
+          <td data-label="Product"><div class="prod">Neuromodulator 100u</div><div class="meta">Supplier: Ardent Medical</div></td>
+          <td data-label="Batch">B-4471</td>
+          <td data-label="Expires"><span class="pill red">11 days</span></td>
+          <td data-label="On hand">3 vials</td>
+          <td data-label="Value at risk">$960</td>
+          <td data-label="Actions"><button class="btn">Prioritise</button></td>
         </tr>
         <tr class="row">
-          <td><div class="prod">HA Dermal Filler 1.0ml</div><div class="meta">Supplier: Ardent Medical</div></td>
-          <td>F-2210</td>
-          <td><span class="pill amber">24 days</span></td>
-          <td>4 syringes</td>
-          <td>$620</td>
-          <td><button class="btn">Prioritise</button></td>
+          <td data-label="Product"><div class="prod">HA Dermal Filler 1.0ml</div><div class="meta">Supplier: Ardent Medical</div></td>
+          <td data-label="Batch">F-2210</td>
+          <td data-label="Expires"><span class="pill amber">24 days</span></td>
+          <td data-label="On hand">4 syringes</td>
+          <td data-label="Value at risk">$620</td>
+          <td data-label="Actions"><button class="btn">Prioritise</button></td>
         </tr>
         <tr class="row">
-          <td><div class="prod">Skin Booster 2.0ml</div><div class="meta">Supplier: Meridian Supply</div></td>
-          <td>S-8802</td>
-          <td><span class="pill amber">29 days</span></td>
-          <td>2 vials</td>
-          <td>$260</td>
-          <td><button class="btn">Prioritise</button></td>
+          <td data-label="Product"><div class="prod">Skin Booster 2.0ml</div><div class="meta">Supplier: Meridian Supply</div></td>
+          <td data-label="Batch">S-8802</td>
+          <td data-label="Expires"><span class="pill amber">29 days</span></td>
+          <td data-label="On hand">2 vials</td>
+          <td data-label="Value at risk">$260</td>
+          <td data-label="Actions"><button class="btn">Prioritise</button></td>
         </tr>
       </tbody>
     </table>
@@ -202,18 +259,22 @@
       <h2>Dead stock — no movement in 90 days</h2>
       <span class="note">$3,120 tied up</span>
     </div>
-    <table>
+    <table class="responsive">
       <thead><tr><th>Product</th><th>Last used</th><th>On hand</th><th>Tied-up cost</th><th></th></tr></thead>
       <tbody>
         <tr class="row">
-          <td><div class="prod">Collagen Stimulator</div><div class="meta">Ordered Mar 2026</div></td>
-          <td>117 days ago</td><td>5 vials</td><td>$1,950</td>
-          <td><span class="pill grey">Review</span></td>
+          <td data-label="Product"><div class="prod">Collagen Stimulator</div><div class="meta">Ordered Mar 2026</div></td>
+          <td data-label="Last used">117 days ago</td>
+          <td data-label="On hand">5 vials</td>
+          <td data-label="Tied-up cost">$1,950</td>
+          <td data-label="Status"><span class="pill grey">Review</span></td>
         </tr>
         <tr class="row">
-          <td><div class="prod">PDO Threads — barbed</div><div class="meta">Ordered Feb 2026</div></td>
-          <td>134 days ago</td><td>12 units</td><td>$1,170</td>
-          <td><span class="pill grey">Review</span></td>
+          <td data-label="Product"><div class="prod">PDO Threads — barbed</div><div class="meta">Ordered Feb 2026</div></td>
+          <td data-label="Last used">134 days ago</td>
+          <td data-label="On hand">12 units</td>
+          <td data-label="Tied-up cost">$1,170</td>
+          <td data-label="Status"><span class="pill grey">Review</span></td>
         </tr>
       </tbody>
     </table>
@@ -224,12 +285,12 @@
       <h2>Supplier price changes</h2>
       <span class="note">Detected from your last 6 orders</span>
     </div>
-    <table>
+    <table class="responsive">
       <thead><tr><th>Product</th><th>Supplier</th><th>Was</th><th>Now</th><th>Change</th></tr></thead>
       <tbody>
-        <tr class="row"><td class="prod">HA Dermal Filler 1.0ml</td><td>Ardent Medical</td><td>$142</td><td>$155</td><td><span class="pill red">+9.2%</span></td></tr>
-        <tr class="row"><td class="prod">Neuromodulator 100u</td><td>Ardent Medical</td><td>$320</td><td>$320</td><td><span class="pill grey">no change</span></td></tr>
-        <tr class="row"><td class="prod">Skin Booster 2.0ml</td><td>Meridian Supply</td><td>$138</td><td>$130</td><td><span class="pill green">−5.8%</span></td></tr>
+        <tr class="row"><td data-label="Product" class="prod">HA Dermal Filler 1.0ml</td><td data-label="Supplier">Ardent Medical</td><td data-label="Was">$142</td><td data-label="Now">$155</td><td data-label="Change"><span class="pill red">+9.2%</span></td></tr>
+        <tr class="row"><td data-label="Product" class="prod">Neuromodulator 100u</td><td data-label="Supplier">Ardent Medical</td><td data-label="Was">$320</td><td data-label="Now">$320</td><td data-label="Change"><span class="pill grey">no change</span></td></tr>
+        <tr class="row"><td data-label="Product" class="prod">Skin Booster 2.0ml</td><td data-label="Supplier">Meridian Supply</td><td data-label="Was">$138</td><td data-label="Now">$130</td><td data-label="Change"><span class="pill green">−5.8%</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -239,11 +300,11 @@
       <h2>Units drawn vs billed — by clinician</h2>
       <span class="note">This month</span>
     </div>
-    <table>
+    <table class="responsive">
       <thead><tr><th>Clinician</th><th>Units drawn</th><th>Units billed</th><th>Variance</th><th>Variance %</th></tr></thead>
       <tbody id="clinicianVarianceBody"></tbody>
     </table>
-    <div style="padding:12px 17px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)">
+    <div class="panel-foot">
       Gaps between drawn and billed are common with partial vials and top-ups. This is here to spot patterns worth a quick chat — not to score individual performance.
     </div>
   </div>
@@ -263,7 +324,7 @@
   </div>
 
   <div class="panel">
-    <table>
+    <table class="responsive">
       <thead><tr><th>Product</th><th>Batch</th><th>Expiry</th><th>On hand</th><th>Reorder level</th><th>Unit cost</th><th>Status</th></tr></thead>
       <tbody id="stockBody"></tbody>
     </table>
@@ -280,7 +341,7 @@
   </div>
 
   <div class="panel">
-    <table>
+    <table class="responsive">
       <thead><tr><th>Item</th><th>On hand</th><th>Minimum level</th><th>Supplier</th><th>Status</th><th></th></tr></thead>
       <tbody id="consumablesBody"></tbody>
     </table>
@@ -306,7 +367,7 @@
         <li>2 × Topical anaesthetic sachet</li>
         <li>1 × Procedure pack</li>
       </ul>
-      <div class="cost">Consumable cost $171.50</div>
+      <div class="cost">$171.50</div>
     </div>
     <div class="rcard">
       <h3>Upper face — 3 areas</h3>
@@ -316,7 +377,7 @@
         <li>1 × Saline 5ml</li>
         <li>1 × Procedure pack</li>
       </ul>
-      <div class="cost">Consumable cost $168.00</div>
+      <div class="cost">$168.00</div>
     </div>
     <div class="rcard">
       <h3>Skin booster — full face</h3>
@@ -325,13 +386,13 @@
         <li>2 × Needle 30g</li>
         <li>2 × Topical anaesthetic sachet</li>
       </ul>
-      <div class="cost">Consumable cost $141.00</div>
+      <div class="cost">$141.00</div>
     </div>
   </div>
 
   <div class="panel" style="margin-top:18px">
     <div class="panel-h"><h2>Why recipes matter</h2></div>
-    <div style="padding:16px 17px;font-size:13.5px;color:var(--muted);line-height:1.65">
+    <div style="padding:18px 20px;font-size:13.5px;color:var(--taupe);line-height:1.7">
       Instead of counting stock manually, the clinician picks the treatment they just performed.
       Opendesk deducts every consumable automatically, from the batch closest to expiry first,
       and writes the movement to an audit trail. No patient details are stored — only what left
@@ -350,7 +411,7 @@
   </div>
 
   <div class="panel">
-    <table>
+    <table class="responsive">
       <thead><tr><th>Treatment</th><th>Performed</th><th>Consumable cost</th><th>Price charged</th><th>Margin</th><th>Margin %</th><th>Total contribution</th></tr></thead>
       <tbody id="marginBody"></tbody>
     </table>
@@ -367,44 +428,44 @@
   </div>
 
   <div class="logbox">
-    <div class="flabel" style="margin-bottom:18px;max-width:240px">Clinician
+    <label class="flabel" style="margin-bottom:20px;max-width:260px">Clinician
       <select id="clinicianSelect" class="field" onchange="updateHint();updateConfirmState()">
         <option value="">Select clinician</option>
         <option>Steph M.</option>
         <option>Nurse Amy</option>
         <option>Nurse Jo</option>
       </select>
-    </div>
+    </label>
 
-    <div style="font-size:13px;font-weight:600;margin-bottom:10px">Which treatment?</div>
+    <div class="section-label">Which treatment?</div>
     <div class="rgrid">
-      <div class="rcard" onclick="pick(this,'lip')"><h3>Lip filler — 1ml</h3><ul><li>4 consumables</li></ul></div>
-      <div class="rcard" onclick="pick(this,'face')"><h3>Upper face — 3 areas</h3><ul><li>4 consumables</li></ul></div>
-      <div class="rcard" onclick="pick(this,'boost')"><h3>Skin booster — full face</h3><ul><li>3 consumables</li></ul></div>
+      <button type="button" class="rcard rcard-pick" onclick="pick(this,'lip')"><h3>Lip filler — 1ml</h3><div class="count">4 consumables</div></button>
+      <button type="button" class="rcard rcard-pick" onclick="pick(this,'face')"><h3>Upper face — 3 areas</h3><div class="count">4 consumables</div></button>
+      <button type="button" class="rcard rcard-pick" onclick="pick(this,'boost')"><h3>Skin booster — full face</h3><div class="count">3 consumables</div></button>
     </div>
 
-    <div id="unitBox" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
-      <div style="font-size:13px;font-weight:600;margin-bottom:10px">Dosing — <span id="unitProductName"></span></div>
+    <div id="unitBox" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--line)">
+      <div class="section-label">Dosing — <span id="unitProductName" style="color:var(--ink);text-transform:none;letter-spacing:0;font-weight:600"></span></div>
       <div style="display:flex;gap:16px;flex-wrap:wrap">
-        <label class="flabel">Units drawn from vial
-          <input type="number" id="unitsDrawn" class="field" style="width:160px" min="0">
+        <label class="flabel" style="width:170px">Units drawn from vial
+          <input type="number" id="unitsDrawn" class="field" min="0">
         </label>
-        <label class="flabel">Units billed to patient
-          <input type="number" id="unitsBilled" class="field" style="width:160px" min="0">
+        <label class="flabel" style="width:170px">Units billed to patient
+          <input type="number" id="unitsBilled" class="field" min="0">
         </label>
       </div>
     </div>
 
-    <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+    <div style="margin-top:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
       <button class="btn p" id="confirmBtn" onclick="deduct()" disabled>Confirm and deduct stock</button>
-      <span style="font-size:12.5px;color:var(--muted)" id="hint">Select a clinician and treatment above</span>
+      <span style="font-size:12.5px;color:var(--taupe)" id="hint">Select a clinician and treatment above</span>
     </div>
 
     <div class="deduct" id="deductBox">
-      <div style="font-size:13px;font-weight:600;margin-bottom:6px">Deducted automatically</div>
+      <div class="section-label" style="margin-bottom:10px">Deducted automatically</div>
       <div id="deductLines"></div>
-      <div id="metaLine" style="display:none;margin-top:10px;font-size:12.5px;color:var(--muted)"></div>
-      <div id="varianceLine" style="display:none;margin-top:8px"></div>
+      <div id="metaLine" style="display:none;margin-top:12px;font-size:12.5px;color:var(--taupe)"></div>
+      <div id="varianceLine" style="display:none;margin-top:10px"></div>
       <div class="done" id="doneMsg"></div>
     </div>
   </div>
@@ -434,15 +495,15 @@ const tag={expiring:['red','Expiring soon'],low:['amber','Below reorder'],dead:[
 document.getElementById('stockBody').innerHTML=stock.map(r=>{
   const [cls,label]=tag[r.st];
   const pct=Math.min(100,Math.round(r.q/Math.max(r.r,1)*50));
-  const barCol=r.q<r.r?'#b54708':'#067647';
+  const barCol=r.q<r.r?'var(--warn)':'var(--good)';
   return `<tr class="row">
-    <td><div class="prod">${r.p}</div><div class="meta">${r.s}</div></td>
-    <td>${r.b}</td>
-    <td>${r.e}${r.d<30?` <span class="pill red" style="margin-left:6px">${r.d}d</span>`:''}</td>
-    <td>${r.q} ${r.u}<div class="bar"><i style="width:${pct}%;background:${barCol}"></i></div></td>
-    <td>${r.r} ${r.u}</td>
-    <td>${r.c}</td>
-    <td><span class="pill ${cls}">${label}</span></td>
+    <td data-label="Product"><div class="prod">${r.p}</div><div class="meta">${r.s}</div></td>
+    <td data-label="Batch">${r.b}</td>
+    <td data-label="Expiry">${r.e}${r.d<30?` <span class="pill red" style="margin-left:6px">${r.d}d</span>`:''}</td>
+    <td data-label="On hand">${r.q} ${r.u}<div class="bar"><i style="width:${pct}%;background:${barCol}"></i></div></td>
+    <td data-label="Reorder level">${r.r} ${r.u}</td>
+    <td data-label="Unit cost">${r.c}</td>
+    <td data-label="Status"><span class="pill ${cls}">${label}</span></td>
   </tr>`;
 }).join('');
 
@@ -459,12 +520,12 @@ const consumables=[
 document.getElementById('consumablesBody').innerHTML=consumables.map(r=>{
   const low=r.q<=r.min;
   return `<tr class="row">
-    <td class="prod">${r.p}</td>
-    <td>${r.q} ${r.u}</td>
-    <td>${r.min} ${r.u}</td>
-    <td>${r.s}</td>
-    <td>${low?'<span class="pill red">Below minimum</span>':'<span class="pill green">Healthy</span>'}</td>
-    <td><div style="display:flex;gap:6px;flex-wrap:wrap">
+    <td data-label="Item" class="prod">${r.p}</td>
+    <td data-label="On hand">${r.q} ${r.u}</td>
+    <td data-label="Minimum level">${r.min} ${r.u}</td>
+    <td data-label="Supplier">${r.s}</td>
+    <td data-label="Status">${low?'<span class="pill red">Below minimum</span>':'<span class="pill green">Healthy</span>'}</td>
+    <td data-label="Actions"><div style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn" onclick="flashBtn(this,'✓ Saved')">Set reorder level</button>
       <button class="btn" onclick="flashBtn(this,'✓ Saved')">Assign supplier</button>
     </div></td>
@@ -476,7 +537,7 @@ function flashBtn(btn,label){
   setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; },1200);
 }
 
-/* ---------- treatment margin ---------- */
+/* ---------- treatment margin (signature: contribution ledger) ---------- */
 const treatmentMargin=[
  {name:'Lip filler — 1ml',count:34,cost:171.50,price:650},
  {name:'Upper face — 3 areas',count:51,cost:168.00,price:450},
@@ -490,15 +551,19 @@ const marginTotals=treatmentMargin.reduce((a,t)=>({count:a.count+t.count,total:a
 document.getElementById('marginSummary').textContent=
   `${marginTotals.count} treatments logged this month · $${marginTotals.total.toLocaleString('en-AU',{minimumFractionDigits:0,maximumFractionDigits:0})} total margin contribution`;
 
-document.getElementById('marginBody').innerHTML=treatmentMargin.map(t=>`<tr class="row">
-    <td class="prod">${t.name}</td>
-    <td>${t.count}</td>
-    <td>$${t.cost.toFixed(2)}</td>
-    <td>$${t.price.toFixed(2)}</td>
-    <td>$${t.margin.toFixed(2)}</td>
-    <td>${t.marginPct.toFixed(1)}%</td>
-    <td><b>$${t.total.toLocaleString('en-AU',{minimumFractionDigits:0,maximumFractionDigits:0})}</b></td>
-  </tr>`).join('');
+const maxTotal=Math.max(...treatmentMargin.map(t=>t.total));
+document.getElementById('marginBody').innerHTML=treatmentMargin.map(t=>{
+  const pct=Math.round(t.total/maxTotal*100);
+  return `<tr class="row ledger-row" style="--pct:${pct}%">
+    <td data-label="Treatment" class="ledger-name">${t.name}</td>
+    <td data-label="Performed">${t.count}</td>
+    <td data-label="Consumable cost">$${t.cost.toFixed(2)}</td>
+    <td data-label="Price charged">$${t.price.toFixed(2)}</td>
+    <td data-label="Margin">$${t.margin.toFixed(2)}</td>
+    <td data-label="Margin %">${t.marginPct.toFixed(1)}%</td>
+    <td data-label="Total contribution"><span class="ledger-total">$${t.total.toLocaleString('en-AU',{minimumFractionDigits:0,maximumFractionDigits:0})}</span></td>
+  </tr>`;
+}).join('');
 
 /* ---------- variance by clinician ---------- */
 const clinicianVariance=[
@@ -511,11 +576,11 @@ document.getElementById('clinicianVarianceBody').innerHTML=clinicianVariance.map
   const pctLabel=c.pct.toFixed(1)+'%';
   const pill=c.pct>=4?`<span class="pill amber">${pctLabel}</span>`:`<span class="pill grey">${pctLabel}</span>`;
   return `<tr class="row">
-    <td class="prod">${c.name}</td>
-    <td>${c.drawn} units</td>
-    <td>${c.billed} units</td>
-    <td>${c.variance} units</td>
-    <td>${pill}</td>
+    <td data-label="Clinician" class="prod">${c.name}</td>
+    <td data-label="Units drawn">${c.drawn} units</td>
+    <td data-label="Units billed">${c.billed} units</td>
+    <td data-label="Variance">${c.variance} units</td>
+    <td data-label="Variance %">${pill}</td>
   </tr>`;
 }).join('');
 
@@ -547,7 +612,7 @@ const recipes={
 };
 let chosen=null;
 function pick(el,key){
-  document.querySelectorAll('#log .rcard').forEach(c=>c.classList.remove('sel'));
+  document.querySelectorAll('#log .rcard-pick').forEach(c=>c.classList.remove('sel'));
   el.classList.add('sel'); chosen=key;
   const r=recipes[key];
 
