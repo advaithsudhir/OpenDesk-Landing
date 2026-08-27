@@ -85,6 +85,11 @@
   .rcard ul{list-style:none;font-size:12.5px;color:var(--muted);line-height:1.65}
   .rcard .cost{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;font-weight:600;color:var(--accent)}
 
+  /* form fields */
+  .field{border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff}
+  .field:focus{outline:none;border-color:var(--accent)}
+  .flabel{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--muted)}
+
   /* log */
   .logbox{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:20px}
   .deduct{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;display:none}
@@ -114,7 +119,9 @@
   <div class="tabs">
     <button class="tab on" onclick="go('dash',this)">Dashboard</button>
     <button class="tab" onclick="go('stock',this)">Stock</button>
+    <button class="tab" onclick="go('consumables',this)">Consumables</button>
     <button class="tab" onclick="go('recipes',this)">Treatment recipes</button>
+    <button class="tab" onclick="go('margin',this)">Treatment margin</button>
     <button class="tab" onclick="go('log',this)">Log a treatment</button>
   </div>
 </div>
@@ -226,6 +233,20 @@
       </tbody>
     </table>
   </div>
+
+  <div class="panel">
+    <div class="panel-h">
+      <h2>Units drawn vs billed — by clinician</h2>
+      <span class="note">This month</span>
+    </div>
+    <table>
+      <thead><tr><th>Clinician</th><th>Units drawn</th><th>Units billed</th><th>Variance</th><th>Variance %</th></tr></thead>
+      <tbody id="clinicianVarianceBody"></tbody>
+    </table>
+    <div style="padding:12px 17px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)">
+      Gaps between drawn and billed are common with partial vials and top-ups. This is here to spot patterns worth a quick chat — not to score individual performance.
+    </div>
+  </div>
 </div>
 
 <!-- ================= STOCK ================= -->
@@ -245,6 +266,23 @@
     <table>
       <thead><tr><th>Product</th><th>Batch</th><th>Expiry</th><th>On hand</th><th>Reorder level</th><th>Unit cost</th><th>Status</th></tr></thead>
       <tbody id="stockBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ================= CONSUMABLES ================= -->
+<div class="view" id="consumables">
+  <div class="head">
+    <div>
+      <h1>Consumables</h1>
+      <div class="sub">Treatment-day items — needles, packs, wipes. Tracked separately from skincare retail stock.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <table>
+      <thead><tr><th>Item</th><th>On hand</th><th>Minimum level</th><th>Supplier</th><th>Status</th><th></th></tr></thead>
+      <tbody id="consumablesBody"></tbody>
     </table>
   </div>
 </div>
@@ -302,6 +340,23 @@
   </div>
 </div>
 
+<!-- ================= TREATMENT MARGIN ================= -->
+<div class="view" id="margin">
+  <div class="head">
+    <div>
+      <h1>Treatment margin</h1>
+      <div class="sub" id="marginSummary">Loading…</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <table>
+      <thead><tr><th>Treatment</th><th>Performed</th><th>Consumable cost</th><th>Price charged</th><th>Margin</th><th>Margin %</th><th>Total contribution</th></tr></thead>
+      <tbody id="marginBody"></tbody>
+    </table>
+  </div>
+</div>
+
 <!-- ================= LOG ================= -->
 <div class="view" id="log">
   <div class="head">
@@ -312,6 +367,15 @@
   </div>
 
   <div class="logbox">
+    <div class="flabel" style="margin-bottom:18px;max-width:240px">Clinician
+      <select id="clinicianSelect" class="field" onchange="updateHint();updateConfirmState()">
+        <option value="">Select clinician</option>
+        <option>Steph M.</option>
+        <option>Nurse Amy</option>
+        <option>Nurse Jo</option>
+      </select>
+    </div>
+
     <div style="font-size:13px;font-weight:600;margin-bottom:10px">Which treatment?</div>
     <div class="rgrid">
       <div class="rcard" onclick="pick(this,'lip')"><h3>Lip filler — 1ml</h3><ul><li>4 consumables</li></ul></div>
@@ -319,14 +383,28 @@
       <div class="rcard" onclick="pick(this,'boost')"><h3>Skin booster — full face</h3><ul><li>3 consumables</li></ul></div>
     </div>
 
+    <div id="unitBox" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">Dosing — <span id="unitProductName"></span></div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <label class="flabel">Units drawn from vial
+          <input type="number" id="unitsDrawn" class="field" style="width:160px" min="0">
+        </label>
+        <label class="flabel">Units billed to patient
+          <input type="number" id="unitsBilled" class="field" style="width:160px" min="0">
+        </label>
+      </div>
+    </div>
+
     <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
       <button class="btn p" id="confirmBtn" onclick="deduct()" disabled>Confirm and deduct stock</button>
-      <span style="font-size:12.5px;color:var(--muted)" id="hint">Select a treatment above</span>
+      <span style="font-size:12.5px;color:var(--muted)" id="hint">Select a clinician and treatment above</span>
     </div>
 
     <div class="deduct" id="deductBox">
       <div style="font-size:13px;font-weight:600;margin-bottom:6px">Deducted automatically</div>
       <div id="deductLines"></div>
+      <div id="metaLine" style="display:none;margin-top:10px;font-size:12.5px;color:var(--muted)"></div>
+      <div id="varianceLine" style="display:none;margin-top:8px"></div>
       <div class="done" id="doneMsg"></div>
     </div>
   </div>
@@ -368,6 +446,79 @@ document.getElementById('stockBody').innerHTML=stock.map(r=>{
   </tr>`;
 }).join('');
 
+/* ---------- consumables ---------- */
+const consumables=[
+ {p:'Needle 30g',q:18,min:40,s:'Northline Aesthetics',u:'units'},
+ {p:'Cannula 25g',q:41,min:20,s:'Northline Aesthetics',u:'units'},
+ {p:'Gauze swabs 10cm',q:64,min:50,s:'Northline Aesthetics',u:'packs'},
+ {p:'Topical anaesthetic sachet',q:7,min:15,s:'Meridian Supply',u:'sachets'},
+ {p:'Procedure pack',q:26,min:15,s:'Northline Aesthetics',u:'packs'},
+ {p:'Alcohol wipes (box of 200)',q:3,min:4,s:'Meridian Supply',u:'boxes'},
+ {p:'Sharps container 5L',q:6,min:3,s:'Northline Aesthetics',u:'units'},
+];
+document.getElementById('consumablesBody').innerHTML=consumables.map(r=>{
+  const low=r.q<=r.min;
+  return `<tr class="row">
+    <td class="prod">${r.p}</td>
+    <td>${r.q} ${r.u}</td>
+    <td>${r.min} ${r.u}</td>
+    <td>${r.s}</td>
+    <td>${low?'<span class="pill red">Below minimum</span>':'<span class="pill green">Healthy</span>'}</td>
+    <td><div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn" onclick="flashBtn(this,'✓ Saved')">Set reorder level</button>
+      <button class="btn" onclick="flashBtn(this,'✓ Saved')">Assign supplier</button>
+    </div></td>
+  </tr>`;
+}).join('');
+function flashBtn(btn,label){
+  const orig=btn.textContent;
+  btn.textContent=label; btn.disabled=true;
+  setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; },1200);
+}
+
+/* ---------- treatment margin ---------- */
+const treatmentMargin=[
+ {name:'Lip filler — 1ml',count:34,cost:171.50,price:650},
+ {name:'Upper face — 3 areas',count:51,cost:168.00,price:450},
+ {name:'Skin booster — full face',count:22,cost:141.00,price:390},
+].map(t=>{
+  const margin=t.price-t.cost;
+  return {...t,margin,marginPct:margin/t.price*100,total:margin*t.count};
+}).sort((a,b)=>b.total-a.total);
+
+const marginTotals=treatmentMargin.reduce((a,t)=>({count:a.count+t.count,total:a.total+t.total}),{count:0,total:0});
+document.getElementById('marginSummary').textContent=
+  `${marginTotals.count} treatments logged this month · $${marginTotals.total.toLocaleString('en-AU',{minimumFractionDigits:0,maximumFractionDigits:0})} total margin contribution`;
+
+document.getElementById('marginBody').innerHTML=treatmentMargin.map(t=>`<tr class="row">
+    <td class="prod">${t.name}</td>
+    <td>${t.count}</td>
+    <td>$${t.cost.toFixed(2)}</td>
+    <td>$${t.price.toFixed(2)}</td>
+    <td>$${t.margin.toFixed(2)}</td>
+    <td>${t.marginPct.toFixed(1)}%</td>
+    <td><b>$${t.total.toLocaleString('en-AU',{minimumFractionDigits:0,maximumFractionDigits:0})}</b></td>
+  </tr>`).join('');
+
+/* ---------- variance by clinician ---------- */
+const clinicianVariance=[
+ {name:'Steph M.',drawn:620,billed:610},
+ {name:'Nurse Amy',drawn:540,billed:512},
+ {name:'Nurse Jo',drawn:480,billed:478},
+].map(c=>({...c,variance:c.drawn-c.billed,pct:(c.drawn-c.billed)/c.drawn*100}));
+
+document.getElementById('clinicianVarianceBody').innerHTML=clinicianVariance.map(c=>{
+  const pctLabel=c.pct.toFixed(1)+'%';
+  const pill=c.pct>=4?`<span class="pill amber">${pctLabel}</span>`:`<span class="pill grey">${pctLabel}</span>`;
+  return `<tr class="row">
+    <td class="prod">${c.name}</td>
+    <td>${c.drawn} units</td>
+    <td>${c.billed} units</td>
+    <td>${c.variance} units</td>
+    <td>${pill}</td>
+  </tr>`;
+}).join('');
+
 /* ---------- tabs ---------- */
 function go(id,el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
@@ -379,17 +530,17 @@ function go(id,el){
 
 /* ---------- treatment logging ---------- */
 const recipes={
-  lip:{name:'Lip filler — 1ml',items:[
+  lip:{name:'Lip filler — 1ml',mainBatch:'F-2210',unit:null,items:[
     ['HA Dermal Filler 1.0ml','1 syringe','batch F-2210 · expires in 24 days'],
     ['Cannula 25g','1 unit',''],
     ['Topical anaesthetic sachet','2 sachets','batch A-3390'],
     ['Procedure pack','1 pack','']]},
-  face:{name:'Upper face — 3 areas',items:[
+  face:{name:'Upper face — 3 areas',mainBatch:'B-4471',unit:{product:'Neuromodulator 100u',label:'units',standard:50},items:[
     ['Neuromodulator 100u','50 units','batch B-4471 · expires in 11 days'],
     ['Needle 30g','1 unit',''],
     ['Saline 5ml','1 vial',''],
     ['Procedure pack','1 pack','']]},
-  boost:{name:'Skin booster — full face',items:[
+  boost:{name:'Skin booster — full face',mainBatch:'S-8802',unit:null,items:[
     ['Skin Booster 2.0ml','1 vial','batch S-8802 · expires in 29 days'],
     ['Needle 30g','2 units',''],
     ['Topical anaesthetic sachet','2 sachets','batch A-3390']]}
@@ -398,13 +549,38 @@ let chosen=null;
 function pick(el,key){
   document.querySelectorAll('#log .rcard').forEach(c=>c.classList.remove('sel'));
   el.classList.add('sel'); chosen=key;
-  document.getElementById('confirmBtn').disabled=false;
-  document.getElementById('hint').textContent=recipes[key].name+' selected';
+  const r=recipes[key];
+
+  const unitBox=document.getElementById('unitBox');
+  if(r.unit){
+    unitBox.style.display='block';
+    document.getElementById('unitProductName').textContent=r.unit.product;
+    document.getElementById('unitsDrawn').value=r.unit.standard;
+    document.getElementById('unitsBilled').value=r.unit.standard;
+  } else {
+    unitBox.style.display='none';
+  }
+
   document.getElementById('deductBox').classList.remove('show');
   document.getElementById('doneMsg').classList.remove('show');
+  document.getElementById('metaLine').style.display='none';
+  document.getElementById('varianceLine').style.display='none';
+  updateHint();
+  updateConfirmState();
+}
+function updateHint(){
+  const clinician=document.getElementById('clinicianSelect').value;
+  const hint=document.getElementById('hint');
+  if(!chosen){ hint.textContent='Select a clinician and treatment above'; return; }
+  hint.textContent = clinician ? `${recipes[chosen].name} · ${clinician}` : `${recipes[chosen].name} selected — choose a clinician`;
+}
+function updateConfirmState(){
+  const clinician=document.getElementById('clinicianSelect').value;
+  document.getElementById('confirmBtn').disabled=!(chosen && clinician);
 }
 function deduct(){
   const r=recipes[chosen];
+  const clinician=document.getElementById('clinicianSelect').value;
   const box=document.getElementById('deductBox');
   const lines=document.getElementById('deductLines');
   lines.innerHTML='';
@@ -416,6 +592,31 @@ function deduct(){
     d.innerHTML=`<div>${it[0]}${it[2]?`<div class="from">${it[2]}</div>`:''}</div><b>− ${it[1]}</b>`;
     lines.appendChild(d);
   });
+
+  const metaLine=document.getElementById('metaLine');
+  metaLine.textContent=`Logged by ${clinician} · primary batch ${r.mainBatch}`;
+  metaLine.style.display='block';
+
+  const varLine=document.getElementById('varianceLine');
+  if(r.unit){
+    const drawn=parseInt(document.getElementById('unitsDrawn').value,10)||0;
+    const billed=parseInt(document.getElementById('unitsBilled').value,10)||0;
+    const diff=drawn-billed;
+    let cls='green', msg=`${drawn} units drawn, ${billed} billed — matched, no variance`;
+    if(diff>0){
+      cls=diff>=4?'red':'amber';
+      msg=`${diff} unit${diff===1?'':'s'} drawn but not billed`;
+    } else if(diff<0){
+      cls='amber';
+      msg=`${Math.abs(diff)} more unit${Math.abs(diff)===1?'':'s'} billed than drawn — check entry`;
+    }
+    varLine.innerHTML=`<span class="pill ${cls}">${msg}</span>`;
+    varLine.style.display='block';
+  } else {
+    varLine.style.display='none';
+    varLine.innerHTML='';
+  }
+
   setTimeout(()=>{
     const m=document.getElementById('doneMsg');
     m.textContent='✓ Stock updated and written to the audit trail. Oldest batches used first — no patient data recorded.';
