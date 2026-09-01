@@ -1,0 +1,90 @@
+.root :global(a) {
+  color: #4a6350;
+}
+.root :global(a:hover) {
+  color: #1f2421;
+}
+.root :global(:focus-visible) {
+  outline: 2px solid #7c9885;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.root :global(::selection) {
+  background: #e8c4c0;
+  color: #1f2421;
+}
+
+.cta {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  flex: none;
+  white-space: nowrap;
+}
+.cta:hover {
+  background: #4a6350 !important;
+  border-color: #4a6350 !important;
+}
+
+.lnk {
+  transition: color 0.2s ease;
+  flex: none;
+  white-space: nowrap;
+}
+
+.shotLg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.shotSm {
+  display: none;
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  .shotLg {
+    display: none !important;
+  }
+  .shotSm {
+    display: block !important;
+  }
+}
+
+@media (min-width: 860px) {
+  .h1 {
+    font-size: 68px !important;
+    line-height: 1.02 !important;
+  }
+  .prob {
+    font-size: 34px !important;
+    line-height: 1.34 !important;
+  }
+  .h3 {
+    font-size: 34px !important;
+  }
+  .pad {
+    padding-left: 72px !important;
+    padding-right: 72px !important;
+  }
+  .sub {
+    font-size: 20px !important;
+  }
+  .h2 {
+    font-size: 40px !important;
+  }
+  .row {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+  .trust {
+    font-size: 26px !important;
+  }
+  .trustgrid {
+    grid-template-columns: 1.05fr 1fr !important;
+    gap: 64px !important;
+  }
+  .roi {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 48px !important;
+  }
+}

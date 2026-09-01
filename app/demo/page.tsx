@@ -1,13 +1,24 @@
 import type { Metadata } from "next";
-import DemoClient from "./DemoClient";
 
 export const metadata: Metadata = {
-  title: "Live Demo — Opendesk",
+  title: "Live Demo — Opendesk Inventory Intelligence",
   description:
-    "Try the exact patient chat experience Opendesk gives real cosmetic clinic patients, shown on a fictional demo clinic.",
-  robots: { index: false, follow: false },
+    "Try Opendesk with a clinic's worth of sample data — dashboard, stock, consumables, treatment recipes, treatment margin and the log-a-treatment flow.",
 };
 
 export default function DemoPage() {
-  return <DemoClient />;
+  return (
+    <iframe
+      src="/stockroom-prototype.html"
+      title="Opendesk — Inventory Intelligence for Cosmetic Clinics"
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        border: "none",
+        display: "block",
+      }}
+    />
+  );
 }
