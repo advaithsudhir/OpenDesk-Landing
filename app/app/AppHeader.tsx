@@ -5,6 +5,7 @@ import { ink, sage, sageDeep, stone, line } from "../theme";
 const navItems = [
   { href: "/app", label: "Dashboard", key: "dashboard" },
   { href: "/app/stock", label: "Stock", key: "stock" },
+  { href: "/app/consumables", label: "Consumables", key: "consumables" },
 ] as const;
 
 export default function AppHeader({
