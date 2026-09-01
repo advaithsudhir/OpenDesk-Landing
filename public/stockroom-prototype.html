@@ -191,7 +191,7 @@
     <button class="tab on" onclick="go('dash',this)">Dashboard</button>
     <button class="tab" onclick="go('stock',this)">Stock</button>
     <button class="tab" onclick="go('consumables',this)">Consumables</button>
-    <button class="tab" onclick="go('recipes',this)">Treatment recipes</button>
+    <button class="tab" onclick="go('recipes',this)">Supplies per procedure</button>
     <button class="tab" onclick="go('margin',this)">Treatment margin</button>
     <button class="tab" onclick="go('log',this)">Log a treatment</button>
   </div>
@@ -366,10 +366,10 @@
 <div class="view" id="recipes">
   <div class="head">
     <div>
-      <h1>Treatment recipes</h1>
+      <h1>Supplies per procedure</h1>
       <div class="sub">What each treatment consumes. No patient data — just products and quantities.</div>
     </div>
-    <button class="btn p">New recipe</button>
+    <button class="btn p">New procedure</button>
   </div>
 
   <div class="rgrid">
@@ -405,7 +405,7 @@
   </div>
 
   <div class="panel" style="margin-top:18px">
-    <div class="panel-h"><h2>Why recipes matter</h2></div>
+    <div class="panel-h"><h2>Why supplies per procedure matter</h2></div>
     <div style="padding:18px 20px;font-size:13.5px;color:var(--stone);line-height:1.7">
       Instead of counting stock manually, the clinician picks the treatment they just performed.
       Opendesk deducts every consumable automatically, from the batch closest to expiry first,

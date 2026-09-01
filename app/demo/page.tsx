@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Live Demo — Opendesk Inventory Intelligence",
   description:
-    "Try Opendesk with a clinic's worth of sample data — dashboard, stock, consumables, treatment recipes, treatment margin and the log-a-treatment flow.",
+    "Try Opendesk with a clinic's worth of sample data — dashboard, stock, consumables, supplies per procedure, treatment margin and the log-a-treatment flow.",
 };
 
 export default function DemoPage() {
