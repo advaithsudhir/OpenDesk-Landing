@@ -623,6 +623,9 @@ export default function Home() {
               <a className={styles.lnk} href="#" style={{ color: stone, textDecoration: "none" }}>
                 Privacy
               </a>
+              <Link className={styles.lnk} href="/login" style={{ color: stone, textDecoration: "none" }}>
+                Log in
+              </Link>
               <span style={{ whiteSpace: "nowrap" }}>© 2026 Opendesk</span>
             </div>
           </footer>
