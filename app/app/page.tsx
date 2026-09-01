@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import FontLinks from "../FontLinks";
 import ClinicSetupForm from "./ClinicSetupForm";
 import LogoutButton from "./LogoutButton";
+import AppHeader from "./AppHeader";
 import styles from "../auth.module.css";
-import { paper, ink, stone, sage, line, fraunces } from "../theme";
+import { paper, ink, stone, sage, sageDeep, line, fraunces } from "../theme";
 
 export const metadata: Metadata = {
   title: "Dashboard — Opendesk",
@@ -93,25 +95,7 @@ export default async function AppPage() {
           </div>
         ) : (
           <div>
-            <header
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "20px 32px",
-                borderBottom: `1px solid ${line}`,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
-                <span style={{ fontSize: 17, color: ink, letterSpacing: "0.01em" }}>
-                  open<span style={{ color: sage }}>•</span>desk
-                </span>
-                <span style={{ fontSize: 13, color: stone, borderLeft: `1px solid ${line}`, paddingLeft: 16 }}>
-                  {clinic.name}
-                </span>
-              </div>
-              <LogoutButton />
-            </header>
+            <AppHeader clinicName={clinic.name} active="dashboard" />
 
             <main style={{ maxWidth: 720, margin: "0 auto", padding: "64px 32px" }}>
               <h1
@@ -125,12 +109,27 @@ export default async function AppPage() {
               >
                 You&apos;re logged in.
               </h1>
-              <p style={{ fontSize: 15, lineHeight: 1.65, color: stone, maxWidth: "52ch" }}>
+              <p style={{ fontSize: 15, lineHeight: 1.65, color: stone, maxWidth: "52ch", marginBottom: 28 }}>
                 {clinic.name} is now linked to your account. This is the real dashboard —
-                wired to your Supabase data rather than the sample demo — and it&apos;s
-                ready for the actual inventory screens (stock, consumables, treatment
-                margin) to be built out here next.
+                wired to your Supabase data rather than the sample demo.
               </p>
+              <Link
+                href="/app/stock"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  minHeight: 48,
+                  padding: "0 24px",
+                  background: sageDeep,
+                  color: paper,
+                  fontSize: 15,
+                  fontWeight: 500,
+                  textDecoration: "none",
+                  borderRadius: 3,
+                }}
+              >
+                Go to Stock →
+              </Link>
             </main>
           </div>
         )}
