@@ -49,27 +49,31 @@ export default async function StockPage() {
     redirect("/login");
   }
 
+  // Fetch the profile, its clinic, and that clinic's stock in a single
+  // round-trip via PostgREST's foreign-key embedding, instead of two
+  // sequential queries.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("clinic_id, clinics ( id, name )")
+    .select(
+      `clinic_id, clinics (
+        id, name,
+        stock_items ( id, product_name, supplier, batch, expiry_date, quantity, unit, reorder_level, unit_cost, created_at )
+      )`
+    )
     .eq("id", user.id)
     .single();
 
-  const clinic = profile?.clinics as unknown as { id: string; name: string } | null;
+  const clinic = profile?.clinics as unknown as
+    | { id: string; name: string; stock_items: (StockItem & { created_at: string })[] }
+    | null;
 
   if (!clinic) {
     redirect("/app");
   }
 
-  const { data: items } = await supabase
-    .from("stock_items")
-    .select(
-      "id, product_name, supplier, batch, expiry_date, quantity, unit, reorder_level, unit_cost"
-    )
-    .eq("clinic_id", clinic.id)
-    .order("created_at", { ascending: false });
-
-  const stockItems = (items as StockItem[]) || [];
+  const stockItems = [...(clinic.stock_items || [])].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   return (
     <>
