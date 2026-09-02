@@ -4,7 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import FontLinks from "../../FontLinks";
 import AppHeader from "../AppHeader";
 import AddProductForm from "./AddProductForm";
+import { removeProduct } from "./actions";
+import DeleteButton from "../DeleteButton";
 import styles from "./products.module.css";
+import authStyles from "../../auth.module.css";
 import { paper, ink, stone, fraunces } from "../../theme";
 
 export const metadata: Metadata = {
@@ -24,7 +27,12 @@ type Product = {
   created_at: string;
 };
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error: errorParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -85,6 +93,12 @@ export default async function ProductsPage() {
             here, then receive stock or use it in a procedure.
           </p>
 
+          {errorParam && (
+            <div className={authStyles.error} role="alert" style={{ marginBottom: 16 }}>
+              {errorParam}
+            </div>
+          )}
+
           <div className={styles.panel} style={{ padding: 24, marginBottom: 24 }}>
             <AddProductForm />
           </div>
@@ -103,6 +117,7 @@ export default async function ProductsPage() {
                     <th>Default supplier</th>
                     <th>Reorder level</th>
                     <th>S4</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -126,6 +141,14 @@ export default async function ProductsPage() {
                         ) : (
                           <span className={`${styles.pill} ${styles.pillGrey}`}>—</span>
                         )}
+                      </td>
+                      <td data-label="">
+                        <form action={removeProduct}>
+                          <input type="hidden" name="productId" value={p.id} />
+                          <DeleteButton className={styles.removeBtn} confirmText={`Remove ${p.name}?`}>
+                            Remove
+                          </DeleteButton>
+                        </form>
                       </td>
                     </tr>
                   ))}

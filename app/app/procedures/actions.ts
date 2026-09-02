@@ -82,3 +82,43 @@ export async function createProcedure(
   revalidatePath("/app/procedures");
   return { error: null, success: true };
 }
+
+export async function removeProcedure(formData: FormData) {
+  const procedureId = String(formData.get("procedureId") || "");
+  if (!procedureId) return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("clinic_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.clinic_id) return;
+
+  const { error } = await supabase
+    .from("procedures")
+    .delete()
+    .eq("id", procedureId)
+    .eq("clinic_id", profile.clinic_id);
+
+  revalidatePath("/app/procedures");
+
+  if (error) {
+    const message =
+      error.code === "23503"
+        ? "Can't remove — this procedure has treatment logs on record."
+        : "Something went wrong removing that procedure. Please try again.";
+    redirect(`/app/procedures?error=${encodeURIComponent(message)}`);
+  }
+
+  redirect("/app/procedures");
+}

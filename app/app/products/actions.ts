@@ -71,3 +71,69 @@ export async function addProduct(
   revalidatePath("/app/products");
   return { error: null, success: true };
 }
+
+export async function removeProduct(formData: FormData) {
+  const productId = String(formData.get("productId") || "");
+  if (!productId) return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("clinic_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.clinic_id) return;
+
+  const { data: product } = await supabase
+    .from("products")
+    .select("name")
+    .eq("id", productId)
+    .eq("clinic_id", profile.clinic_id)
+    .single();
+
+  const [{ count: batchCount }, { count: supplyCount }] = await Promise.all([
+    supabase
+      .from("stock_batches")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId)
+      .eq("clinic_id", profile.clinic_id),
+    supabase
+      .from("procedure_supplies")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId)
+      .eq("clinic_id", profile.clinic_id),
+  ]);
+
+  if ((batchCount || 0) > 0 || (supplyCount || 0) > 0) {
+    const parts: string[] = [];
+    if (batchCount) parts.push(`${batchCount} stock batch${batchCount === 1 ? "" : "es"}`);
+    if (supplyCount) parts.push(`${supplyCount} procedure${supplyCount === 1 ? "" : "s"}`);
+    const message = `Can't remove "${product?.name || "this product"}" — it's referenced by ${parts.join(" and ")}. Remove those first.`;
+    redirect(`/app/products?error=${encodeURIComponent(message)}`);
+  }
+
+  const { error } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", productId)
+    .eq("clinic_id", profile.clinic_id);
+
+  revalidatePath("/app/products");
+
+  if (error) {
+    redirect(
+      `/app/products?error=${encodeURIComponent("Something went wrong removing that product. Please try again.")}`
+    );
+  }
+
+  redirect("/app/products");
+}

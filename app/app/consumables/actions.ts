@@ -59,3 +59,44 @@ export async function addConsumable(
   revalidatePath("/app/consumables");
   return { error: null, success: true };
 }
+
+export async function removeConsumableStock(formData: FormData) {
+  const productId = String(formData.get("productId") || "");
+  if (!productId) return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("clinic_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.clinic_id) return;
+
+  const { error } = await supabase
+    .from("stock_batches")
+    .delete()
+    .eq("product_id", productId)
+    .eq("clinic_id", profile.clinic_id);
+
+  revalidatePath("/app/consumables");
+  revalidatePath("/app/stock");
+
+  if (error) {
+    const message =
+      error.code === "23503"
+        ? "Can't remove — some of this stock has treatment history."
+        : "Something went wrong removing that stock. Please try again.";
+    redirect(`/app/consumables?error=${encodeURIComponent(message)}`);
+  }
+
+  redirect("/app/consumables");
+}

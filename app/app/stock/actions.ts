@@ -62,3 +62,44 @@ export async function addStockBatch(
   revalidatePath("/app/stock");
   return { error: null, success: true };
 }
+
+export async function removeStockBatch(formData: FormData) {
+  const batchId = String(formData.get("batchId") || "");
+  if (!batchId) return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("clinic_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.clinic_id) return;
+
+  const { error } = await supabase
+    .from("stock_batches")
+    .delete()
+    .eq("id", batchId)
+    .eq("clinic_id", profile.clinic_id);
+
+  revalidatePath("/app/stock");
+  revalidatePath("/app/consumables");
+
+  if (error) {
+    const message =
+      error.code === "23503"
+        ? "Can't remove — this batch has treatment history."
+        : "Something went wrong removing that batch. Please try again.";
+    redirect(`/app/stock?error=${encodeURIComponent(message)}`);
+  }
+
+  redirect("/app/stock");
+}

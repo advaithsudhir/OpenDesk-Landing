@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import FontLinks from "../../FontLinks";
 import AppHeader from "../AppHeader";
 import AddStockForm from "./AddStockForm";
+import { removeStockBatch } from "./actions";
+import DeleteButton from "../DeleteButton";
 import stockStyles from "./stock.module.css";
 import authStyles from "../../auth.module.css";
 import { paper, ink, stone, sageDeep, line, fraunces } from "../../theme";
@@ -52,7 +54,12 @@ function getStatus(batch: Batch) {
   return { label: "Healthy", cls: stockStyles.pillGreen, days: null };
 }
 
-export default async function StockPage() {
+export default async function StockPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error: errorParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -124,6 +131,12 @@ export default async function StockPage() {
             Every batch tracked against a real product, by expiry, cost and supplier.
           </p>
 
+          {errorParam && (
+            <div className={authStyles.error} role="alert" style={{ marginBottom: 16 }}>
+              {errorParam}
+            </div>
+          )}
+
           <div className={stockStyles.panel} style={{ padding: 24, marginBottom: 24 }}>
             {stockProducts.length === 0 ? (
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
@@ -159,6 +172,7 @@ export default async function StockPage() {
                     <th>Reorder level</th>
                     <th>Unit cost</th>
                     <th>Status</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -211,6 +225,17 @@ export default async function StockPage() {
                         </td>
                         <td data-label="Status">
                           <span className={`${stockStyles.pill} ${status.cls}`}>{status.label}</span>
+                        </td>
+                        <td data-label="">
+                          <form action={removeStockBatch}>
+                            <input type="hidden" name="batchId" value={batch.id} />
+                            <DeleteButton
+                              className={stockStyles.removeBtn}
+                              confirmText={`Remove this batch of ${product.name}?`}
+                            >
+                              Remove
+                            </DeleteButton>
+                          </form>
                         </td>
                       </tr>
                     );

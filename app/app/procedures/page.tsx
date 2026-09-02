@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import FontLinks from "../../FontLinks";
 import AppHeader from "../AppHeader";
 import NewProcedureForm from "./NewProcedureForm";
+import { removeProcedure } from "./actions";
+import DeleteButton from "../DeleteButton";
 import styles from "./procedures.module.css";
 import authStyles from "../../auth.module.css";
 import { paper, ink, stone, sageDeep, fraunces } from "../../theme";
@@ -31,7 +33,12 @@ type Procedure = {
   procedure_supplies: Supply[];
 };
 
-export default async function ProceduresPage() {
+export default async function ProceduresPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error: errorParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -98,6 +105,12 @@ export default async function ProceduresPage() {
             What each treatment consumes. No patient data — just products and quantities.
           </p>
 
+          {errorParam && (
+            <div className={authStyles.error} role="alert" style={{ marginBottom: 16 }}>
+              {errorParam}
+            </div>
+          )}
+
           <div className={styles.panel} style={{ padding: 24, marginBottom: 24 }}>
             {products.length === 0 ? (
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
@@ -130,7 +143,15 @@ export default async function ProceduresPage() {
                 );
                 return (
                   <div key={proc.id} className={styles.rcard}>
-                    <h3>{proc.name}</h3>
+                    <div className={styles.cardHeader}>
+                      <h3>{proc.name}</h3>
+                      <form action={removeProcedure}>
+                        <input type="hidden" name="procedureId" value={proc.id} />
+                        <DeleteButton className={styles.removeBtn} confirmText={`Remove ${proc.name}?`}>
+                          Remove
+                        </DeleteButton>
+                      </form>
+                    </div>
                     <ul>
                       {proc.procedure_supplies.map((s) => (
                         <li key={s.id}>

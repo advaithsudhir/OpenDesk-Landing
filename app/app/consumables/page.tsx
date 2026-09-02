@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import FontLinks from "../../FontLinks";
 import AppHeader from "../AppHeader";
 import AddConsumableForm from "./AddConsumableForm";
+import { removeConsumableStock } from "./actions";
+import DeleteButton from "../DeleteButton";
 import styles from "./consumables.module.css";
 import authStyles from "../../auth.module.css";
 import { paper, ink, stone, sageDeep, fraunces } from "../../theme";
@@ -28,7 +30,12 @@ type Batch = {
   products: Product | null;
 };
 
-export default async function ConsumablesPage() {
+export default async function ConsumablesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error: errorParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -104,6 +111,12 @@ export default async function ConsumablesPage() {
             retail stock.
           </p>
 
+          {errorParam && (
+            <div className={authStyles.error} role="alert" style={{ marginBottom: 16 }}>
+              {errorParam}
+            </div>
+          )}
+
           <div className={styles.panel} style={{ padding: 24, marginBottom: 24 }}>
             {consumableProducts.length === 0 ? (
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
@@ -136,6 +149,7 @@ export default async function ConsumablesPage() {
                     <th>Minimum level</th>
                     <th>Supplier</th>
                     <th>Status</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -157,6 +171,19 @@ export default async function ConsumablesPage() {
                           <span className={`${styles.pill} ${low ? styles.pillRed : styles.pillGreen}`}>
                             {low ? "Below minimum" : "Healthy"}
                           </span>
+                        </td>
+                        <td data-label="">
+                          {quantity > 0 && (
+                            <form action={removeConsumableStock}>
+                              <input type="hidden" name="productId" value={product.id} />
+                              <DeleteButton
+                                className={styles.removeBtn}
+                                confirmText={`Remove all ${quantity} ${product.unit} of on-hand stock for ${product.name}? This can't be undone.`}
+                              >
+                                Remove
+                              </DeleteButton>
+                            </form>
+                          )}
                         </td>
                       </tr>
                     );

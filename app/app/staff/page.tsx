@@ -5,6 +5,7 @@ import FontLinks from "../../FontLinks";
 import AppHeader from "../AppHeader";
 import AddStaffForm from "./AddStaffForm";
 import { removeStaff } from "./actions";
+import DeleteButton from "../DeleteButton";
 import styles from "./staff.module.css";
 import authStyles from "../../auth.module.css";
 import { paper, ink, stone, fraunces } from "../../theme";
@@ -117,9 +118,9 @@ export default async function StaffPage({
                       <td data-label="">
                         <form action={removeStaff}>
                           <input type="hidden" name="staffId" value={s.id} />
-                          <button type="submit" className={styles.removeBtn}>
+                          <DeleteButton className={styles.removeBtn} confirmText={`Remove ${s.name}?`}>
                             Remove
-                          </button>
+                          </DeleteButton>
                         </form>
                       </td>
                     </tr>
