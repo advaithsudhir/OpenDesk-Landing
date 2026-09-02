@@ -6,7 +6,9 @@ import authStyles from "../../auth.module.css";
 
 const initialState: AddConsumableState = { error: null, success: false };
 
-export default function AddConsumableForm() {
+type ProductOption = { id: string; name: string; unit: string };
+
+export default function AddConsumableForm({ products }: { products: ProductOption[] }) {
   const [state, formAction, pending] = useActionState(addConsumable, initialState);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -28,27 +30,24 @@ export default function AddConsumableForm() {
       }}
     >
       <label className={authStyles.label}>
-        Product name
-        <input className={authStyles.field} type="text" name="productName" required />
-      </label>
-      <label className={authStyles.label}>
-        Supplier
-        <input className={authStyles.field} type="text" name="supplier" />
+        Product
+        <select className={authStyles.field} name="productId" required defaultValue="">
+          <option value="" disabled>
+            Select a product
+          </option>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
       </label>
       <label className={authStyles.label}>
         Quantity
         <input className={authStyles.field} type="number" name="quantity" min={0} required defaultValue={0} />
       </label>
-      <label className={authStyles.label}>
-        Unit
-        <input className={authStyles.field} type="text" name="unit" placeholder="e.g. sachets" defaultValue="units" />
-      </label>
-      <label className={authStyles.label}>
-        Minimum level
-        <input className={authStyles.field} type="number" name="minLevel" min={0} defaultValue={0} />
-      </label>
       <button className={authStyles.btn} type="submit" disabled={pending} style={{ height: 46 }}>
-        {pending ? "Adding…" : "Add item"}
+        {pending ? "Adding…" : "Add stock"}
       </button>
 
       {state.error && (

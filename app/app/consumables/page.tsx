@@ -1,25 +1,31 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import FontLinks from "../../FontLinks";
 import AppHeader from "../AppHeader";
 import AddConsumableForm from "./AddConsumableForm";
 import styles from "./consumables.module.css";
-import { paper, ink, stone, fraunces } from "../../theme";
+import authStyles from "../../auth.module.css";
+import { paper, ink, stone, sageDeep, fraunces } from "../../theme";
 
 export const metadata: Metadata = {
   title: "Consumables — Opendesk",
   robots: { index: false, follow: false },
 };
 
-type Consumable = {
+type Product = {
   id: string;
-  product_name: string;
-  supplier: string | null;
-  quantity: number;
+  name: string;
+  category: string;
   unit: string;
-  min_level: number;
-  created_at: string;
+  default_supplier: string | null;
+  reorder_level: number;
+};
+
+type Batch = {
+  quantity: number;
+  products: Product | null;
 };
 
 export default async function ConsumablesPage() {
@@ -32,30 +38,41 @@ export default async function ConsumablesPage() {
     redirect("/login");
   }
 
-  // Fetch the profile, its clinic, and that clinic's consumables in a single
-  // round-trip via PostgREST's foreign-key embedding.
+  // Fetch the profile, its clinic, its consumable-category products (for
+  // the dropdown), and every batch of those products (to aggregate
+  // on-hand quantity), in a single round-trip.
   const { data: profile } = await supabase
     .from("profiles")
     .select(
       `clinic_id, clinics (
         id, name,
-        consumables ( id, product_name, supplier, quantity, unit, min_level, created_at )
+        products ( id, name, category, unit, default_supplier, reorder_level ),
+        stock_batches ( quantity, products ( id, name, category, unit, default_supplier, reorder_level ) )
       )`
     )
     .eq("id", user.id)
     .single();
 
   const clinic = profile?.clinics as unknown as
-    | { id: string; name: string; consumables: Consumable[] }
+    | { id: string; name: string; products: Product[]; stock_batches: Batch[] }
     | null;
 
   if (!clinic) {
     redirect("/app");
   }
 
-  const items = [...(clinic.consumables || [])].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+  const consumableProducts = (clinic.products || []).filter((p) => p.category === "Consumable");
+
+  const quantityByProduct = new Map<string, number>();
+  for (const batch of clinic.stock_batches || []) {
+    if (batch.products?.category !== "Consumable") continue;
+    const id = batch.products.id;
+    quantityByProduct.set(id, (quantityByProduct.get(id) || 0) + batch.quantity);
+  }
+
+  const rows = consumableProducts
+    .map((p) => ({ product: p, quantity: quantityByProduct.get(p.id) || 0 }))
+    .sort((a, b) => a.product.name.localeCompare(b.product.name));
 
   return (
     <>
@@ -88,11 +105,27 @@ export default async function ConsumablesPage() {
           </p>
 
           <div className={styles.panel} style={{ padding: 24, marginBottom: 24 }}>
-            <AddConsumableForm />
+            {consumableProducts.length === 0 ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 14, color: stone }}>
+                  No consumable products yet — add one first (category "Consumable"), then come
+                  back to add stock.
+                </span>
+                <Link
+                  href="/app/products"
+                  className={authStyles.btn}
+                  style={{ textDecoration: "none", background: sageDeep, borderColor: sageDeep }}
+                >
+                  Add a product
+                </Link>
+              </div>
+            ) : (
+              <AddConsumableForm products={consumableProducts} />
+            )}
           </div>
 
           <div className={styles.panel}>
-            {items.length === 0 ? (
+            {rows.length === 0 ? (
               <div className={styles.empty}>No consumables yet — add your first one above.</div>
             ) : (
               <table className={styles.table}>
@@ -106,20 +139,20 @@ export default async function ConsumablesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item) => {
-                    const low = item.quantity <= item.min_level;
+                  {rows.map(({ product, quantity }) => {
+                    const low = quantity <= product.reorder_level;
                     return (
-                      <tr key={item.id}>
+                      <tr key={product.id}>
                         <td data-label="Item" className={styles.prod}>
-                          {item.product_name}
+                          {product.name}
                         </td>
                         <td data-label="On hand">
-                          {item.quantity} {item.unit}
+                          {quantity} {product.unit}
                         </td>
                         <td data-label="Minimum level">
-                          {item.min_level} {item.unit}
+                          {product.reorder_level} {product.unit}
                         </td>
-                        <td data-label="Supplier">{item.supplier || "—"}</td>
+                        <td data-label="Supplier">{product.default_supplier || "—"}</td>
                         <td data-label="Status">
                           <span className={`${styles.pill} ${low ? styles.pillRed : styles.pillGreen}`}>
                             {low ? "Below minimum" : "Healthy"}

@@ -1,39 +1,52 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import FontLinks from "../../FontLinks";
 import AppHeader from "../AppHeader";
 import AddStockForm from "./AddStockForm";
 import stockStyles from "./stock.module.css";
-import { paper, ink, stone, line, fraunces } from "../../theme";
+import authStyles from "../../auth.module.css";
+import { paper, ink, stone, sageDeep, line, fraunces } from "../../theme";
 
 export const metadata: Metadata = {
   title: "Stock — Opendesk",
   robots: { index: false, follow: false },
 };
 
-type StockItem = {
+type Product = {
   id: string;
-  product_name: string;
-  supplier: string | null;
-  batch: string | null;
-  expiry_date: string | null;
-  quantity: number;
+  name: string;
+  category: string;
   unit: string;
+  cost_per_unit: number | null;
+  default_supplier: string | null;
   reorder_level: number;
-  unit_cost: number | null;
 };
 
-function getStatus(item: StockItem) {
-  if (item.expiry_date) {
+type Batch = {
+  id: string;
+  batch_number: string | null;
+  expiry_date: string | null;
+  quantity: number;
+  unit_cost: number | null;
+  created_at: string;
+  products: Product | null;
+};
+
+function getStatus(batch: Batch) {
+  const product = batch.products;
+  const reorderLevel = product?.reorder_level ?? 0;
+
+  if (batch.expiry_date) {
     const days = Math.floor(
-      (new Date(item.expiry_date).getTime() - Date.now()) / 86_400_000
+      (new Date(batch.expiry_date).getTime() - Date.now()) / 86_400_000
     );
     if (days < 30) {
       return { label: "Expiring soon", cls: stockStyles.pillRed, days };
     }
   }
-  if (item.quantity < item.reorder_level) {
+  if (batch.quantity < reorderLevel) {
     return { label: "Below reorder", cls: stockStyles.pillAmber, days: null };
   }
   return { label: "Healthy", cls: stockStyles.pillGreen, days: null };
@@ -49,31 +62,38 @@ export default async function StockPage() {
     redirect("/login");
   }
 
-  // Fetch the profile, its clinic, and that clinic's stock in a single
-  // round-trip via PostgREST's foreign-key embedding, instead of two
-  // sequential queries.
+  // Fetch the profile, its clinic, its full product catalog (for the
+  // "receive stock" dropdown), and every batch (with its product joined,
+  // for the table) in a single round-trip via PostgREST embedding.
   const { data: profile } = await supabase
     .from("profiles")
     .select(
       `clinic_id, clinics (
         id, name,
-        stock_items ( id, product_name, supplier, batch, expiry_date, quantity, unit, reorder_level, unit_cost, created_at )
+        products ( id, name, category, unit, cost_per_unit, default_supplier, reorder_level ),
+        stock_batches (
+          id, batch_number, expiry_date, quantity, unit_cost, created_at,
+          products ( id, name, category, unit, cost_per_unit, default_supplier, reorder_level )
+        )
       )`
     )
     .eq("id", user.id)
     .single();
 
   const clinic = profile?.clinics as unknown as
-    | { id: string; name: string; stock_items: (StockItem & { created_at: string })[] }
+    | { id: string; name: string; products: Product[]; stock_batches: Batch[] }
     | null;
 
   if (!clinic) {
     redirect("/app");
   }
 
-  const stockItems = [...(clinic.stock_items || [])].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+  const stockProducts = (clinic.products || []).filter((p) => p.category !== "Consumable");
+  const stockProductIds = new Set(stockProducts.map((p) => p.id));
+
+  const batches = [...(clinic.stock_batches || [])]
+    .filter((b) => b.products && stockProductIds.has(b.products.id))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
     <>
@@ -101,17 +121,32 @@ export default async function StockPage() {
             Stock on hand
           </h1>
           <p style={{ fontSize: 14, color: stone, marginBottom: 28 }}>
-            Every item tracked by batch, expiry, cost and supplier.
+            Every batch tracked against a real product, by expiry, cost and supplier.
           </p>
 
           <div className={stockStyles.panel} style={{ padding: 24, marginBottom: 24 }}>
-            <AddStockForm />
+            {stockProducts.length === 0 ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 14, color: stone }}>
+                  No products yet — add one first, then come back to receive stock against it.
+                </span>
+                <Link
+                  href="/app/products"
+                  className={authStyles.btn}
+                  style={{ textDecoration: "none", background: sageDeep, borderColor: sageDeep }}
+                >
+                  Add a product
+                </Link>
+              </div>
+            ) : (
+              <AddStockForm products={stockProducts} />
+            )}
           </div>
 
           <div className={stockStyles.panel}>
-            {stockItems.length === 0 ? (
+            {batches.length === 0 ? (
               <div className={stockStyles.empty}>
-                No stock items yet — add your first one above.
+                No stock received yet — receive your first batch above.
               </div>
             ) : (
               <table className={stockStyles.table}>
@@ -127,23 +162,27 @@ export default async function StockPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {stockItems.map((item) => {
-                    const status = getStatus(item);
+                  {batches.map((batch) => {
+                    const product = batch.products!;
+                    const status = getStatus(batch);
                     const pct = Math.min(
                       100,
-                      Math.round((item.quantity / Math.max(item.reorder_level, 1)) * 50)
+                      Math.round((batch.quantity / Math.max(product.reorder_level, 1)) * 50)
                     );
-                    const barColor = item.quantity < item.reorder_level ? "#B5563E" : "#4A6350";
+                    const barColor = batch.quantity < product.reorder_level ? "#B5563E" : "#4A6350";
+                    const unitCost = batch.unit_cost ?? product.cost_per_unit;
                     return (
-                      <tr key={item.id}>
+                      <tr key={batch.id}>
                         <td data-label="Product">
-                          <div className={stockStyles.prod}>{item.product_name}</div>
-                          {item.supplier && <div className={stockStyles.meta}>{item.supplier}</div>}
+                          <div className={stockStyles.prod}>{product.name}</div>
+                          {product.default_supplier && (
+                            <div className={stockStyles.meta}>{product.default_supplier}</div>
+                          )}
                         </td>
-                        <td data-label="Batch">{item.batch || "—"}</td>
+                        <td data-label="Batch">{batch.batch_number || "—"}</td>
                         <td data-label="Expiry">
-                          {item.expiry_date
-                            ? new Date(item.expiry_date).toLocaleDateString("en-AU", {
+                          {batch.expiry_date
+                            ? new Date(batch.expiry_date).toLocaleDateString("en-AU", {
                                 day: "2-digit",
                                 month: "short",
                                 year: "numeric",
@@ -156,7 +195,7 @@ export default async function StockPage() {
                           )}
                         </td>
                         <td data-label="On hand">
-                          {item.quantity} {item.unit}
+                          {batch.quantity} {product.unit}
                           <div className={stockStyles.bar}>
                             <div
                               className={stockStyles.barFill}
@@ -165,10 +204,10 @@ export default async function StockPage() {
                           </div>
                         </td>
                         <td data-label="Reorder level">
-                          {item.reorder_level} {item.unit}
+                          {product.reorder_level} {product.unit}
                         </td>
                         <td data-label="Unit cost">
-                          {item.unit_cost != null ? `$${item.unit_cost.toFixed(2)}` : "—"}
+                          {unitCost != null ? `$${unitCost.toFixed(2)}` : "—"}
                         </td>
                         <td data-label="Status">
                           <span className={`${stockStyles.pill} ${status.cls}`}>{status.label}</span>

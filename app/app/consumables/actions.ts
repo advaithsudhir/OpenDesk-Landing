@@ -10,14 +10,11 @@ export async function addConsumable(
   _prevState: AddConsumableState,
   formData: FormData
 ): Promise<AddConsumableState> {
-  const productName = String(formData.get("productName") || "").trim();
-  const supplier = String(formData.get("supplier") || "").trim();
+  const productId = String(formData.get("productId") || "").trim();
   const quantity = Number(formData.get("quantity") || 0);
-  const unit = String(formData.get("unit") || "").trim() || "units";
-  const minLevel = Number(formData.get("minLevel") || 0);
 
-  if (!productName) {
-    return { error: "Enter a product name.", success: false };
+  if (!productId) {
+    return { error: "Select a product.", success: false };
   }
   if (!Number.isFinite(quantity) || quantity < 0) {
     return { error: "Quantity must be a positive number.", success: false };
@@ -42,16 +39,19 @@ export async function addConsumable(
     return { error: "Your account isn't linked to a clinic yet.", success: false };
   }
 
-  const { error } = await supabase.from("consumables").insert({
+  const { error } = await supabase.from("stock_batches").insert({
     clinic_id: profile.clinic_id,
-    product_name: productName,
-    supplier: supplier || null,
+    product_id: productId,
+    batch_number: null,
+    expiry_date: null,
     quantity,
-    unit,
-    min_level: Number.isFinite(minLevel) ? minLevel : 0,
+    unit_cost: null,
   });
 
   if (error) {
+    if (error.code === "23503") {
+      return { error: "Select a valid product.", success: false };
+    }
     console.error("addConsumable failed", error);
     return { error: "Something went wrong saving that item. Please try again.", success: false };
   }

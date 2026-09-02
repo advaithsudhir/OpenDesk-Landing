@@ -6,21 +6,18 @@ import { createClient } from "@/lib/supabase/server";
 
 export type AddStockState = { error: string | null; success: boolean };
 
-export async function addStockItem(
+export async function addStockBatch(
   _prevState: AddStockState,
   formData: FormData
 ): Promise<AddStockState> {
-  const productName = String(formData.get("productName") || "").trim();
-  const supplier = String(formData.get("supplier") || "").trim();
-  const batch = String(formData.get("batch") || "").trim();
+  const productId = String(formData.get("productId") || "").trim();
+  const batchNumber = String(formData.get("batchNumber") || "").trim();
   const expiryDate = String(formData.get("expiryDate") || "").trim();
   const quantity = Number(formData.get("quantity") || 0);
-  const unit = String(formData.get("unit") || "").trim() || "units";
-  const reorderLevel = Number(formData.get("reorderLevel") || 0);
   const unitCostRaw = String(formData.get("unitCost") || "").trim();
 
-  if (!productName) {
-    return { error: "Enter a product name.", success: false };
+  if (!productId) {
+    return { error: "Select a product.", success: false };
   }
   if (!Number.isFinite(quantity) || quantity < 0) {
     return { error: "Quantity must be a positive number.", success: false };
@@ -45,20 +42,20 @@ export async function addStockItem(
     return { error: "Your account isn't linked to a clinic yet.", success: false };
   }
 
-  const { error } = await supabase.from("stock_items").insert({
+  const { error } = await supabase.from("stock_batches").insert({
     clinic_id: profile.clinic_id,
-    product_name: productName,
-    supplier: supplier || null,
-    batch: batch || null,
+    product_id: productId,
+    batch_number: batchNumber || null,
     expiry_date: expiryDate || null,
     quantity,
-    unit,
-    reorder_level: Number.isFinite(reorderLevel) ? reorderLevel : 0,
     unit_cost: unitCostRaw ? Number(unitCostRaw) : null,
   });
 
   if (error) {
-    console.error("addStockItem failed", error);
+    if (error.code === "23503") {
+      return { error: "Select a valid product.", success: false };
+    }
+    console.error("addStockBatch failed", error);
     return { error: "Something went wrong saving that item. Please try again.", success: false };
   }
 
