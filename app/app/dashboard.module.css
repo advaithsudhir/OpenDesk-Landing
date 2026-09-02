@@ -1,0 +1,195 @@
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.kpiCard {
+  background: #fff;
+  border: 1px solid #e4e1d8;
+  border-radius: 5px;
+  padding: 20px 22px;
+  box-shadow: 0 1px 2px rgba(31, 36, 33, 0.04), 0 8px 20px -14px rgba(31, 36, 33, 0.18);
+}
+
+.kpiValue {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 26px;
+  margin-bottom: 4px;
+}
+
+.kpiLabel {
+  font-size: 12px;
+  color: #6b7268;
+  margin-bottom: 10px;
+}
+
+.kpiTrend {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.trendDanger {
+  color: #b5563e;
+}
+
+.trendWarn {
+  color: #8a6a3d;
+}
+
+.trendGood {
+  color: #4a6350;
+}
+
+.trendNeutral {
+  color: #6b7268;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e4e1d8;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(31, 36, 33, 0.04), 0 8px 20px -14px rgba(31, 36, 33, 0.18);
+  margin-bottom: 24px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e4e1d8;
+  flex-wrap: wrap;
+}
+
+.panelHeader h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.panelNote {
+  font-size: 12px;
+  color: #6b7268;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7268;
+  font-weight: 700;
+  padding: 11px 20px;
+  border-bottom: 1px solid #e4e1d8;
+  background: #fbf8f3;
+}
+
+.table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid #e4e1d8;
+  font-size: 13.5px;
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.prod {
+  font-weight: 600;
+}
+
+.meta {
+  font-size: 11.5px;
+  color: #6b7268;
+  margin-top: 2px;
+}
+
+.pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.pillRed {
+  background: rgba(181, 86, 62, 0.14);
+  color: #b5563e;
+}
+
+.pillAmber {
+  background: rgba(232, 196, 192, 0.45);
+  color: #1f2421;
+}
+
+.pillGreen {
+  background: rgba(124, 152, 133, 0.16);
+  color: #4a6350;
+}
+
+.pillGrey {
+  background: rgba(107, 114, 104, 0.12);
+  color: #6b7268;
+}
+
+.empty {
+  padding: 32px 24px;
+  text-align: center;
+  color: #6b7268;
+  font-size: 14px;
+}
+
+.panelFooter {
+  padding: 14px 20px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #6b7268;
+  border-top: 1px solid #e4e1d8;
+  background: #fbf8f3;
+}
+
+@media (max-width: 720px) {
+  .table thead {
+    display: none;
+  }
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+  .table tr {
+    padding: 14px 18px;
+    border-bottom: 1px solid #e4e1d8;
+  }
+  .table td {
+    padding: 5px 0;
+    border: none;
+  }
+  .table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    color: #c9beae;
+    margin-bottom: 3px;
+  }
+  .table td:empty {
+    display: none;
+  }
+}
