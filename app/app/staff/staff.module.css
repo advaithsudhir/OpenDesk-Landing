@@ -1,0 +1,97 @@
+.panel {
+  background: #fff;
+  border: 1px solid #e4e1d8;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(31, 36, 33, 0.04), 0 8px 20px -14px rgba(31, 36, 33, 0.18);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7268;
+  font-weight: 700;
+  padding: 11px 20px;
+  border-bottom: 1px solid #e4e1d8;
+  background: #fbf8f3;
+}
+
+.table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid #e4e1d8;
+  font-size: 13.5px;
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.prod {
+  font-weight: 600;
+}
+
+.removeBtn {
+  font-family: "Public Sans", system-ui, sans-serif;
+  font-size: 12.5px;
+  color: #b5563e;
+  background: transparent;
+  border: 1px solid #e4e1d8;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.removeBtn:hover {
+  border-color: #b5563e;
+}
+
+.empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: #6b7268;
+  font-size: 14px;
+}
+
+@media (max-width: 720px) {
+  .table thead {
+    display: none;
+  }
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+  .table tr {
+    padding: 14px 18px;
+    border-bottom: 1px solid #e4e1d8;
+  }
+  .table td {
+    padding: 5px 0;
+    border: none;
+  }
+  .table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    color: #c9beae;
+    margin-bottom: 3px;
+  }
+  .table td:empty {
+    display: none;
+  }
+}

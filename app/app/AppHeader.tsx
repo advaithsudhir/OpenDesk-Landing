@@ -7,6 +7,9 @@ const navItems = [
   { href: "/app/products", label: "Products", key: "products" },
   { href: "/app/stock", label: "Stock", key: "stock" },
   { href: "/app/consumables", label: "Consumables", key: "consumables" },
+  { href: "/app/procedures", label: "Procedures", key: "procedures" },
+  { href: "/app/log-treatment", label: "Log treatment", key: "logTreatment" },
+  { href: "/app/staff", label: "Staff", key: "staff" },
 ] as const;
 
 export default function AppHeader({
