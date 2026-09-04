@@ -189,11 +189,13 @@
   <div class="clinic">Lumen Aesthetics · Paddington</div>
   <div class="tabs">
     <button class="tab on" onclick="go('dash',this)">Dashboard</button>
+    <button class="tab" onclick="go('products',this)">Products</button>
     <button class="tab" onclick="go('stock',this)">Stock</button>
     <button class="tab" onclick="go('consumables',this)">Consumables</button>
     <button class="tab" onclick="go('recipes',this)">Supplies per procedure</button>
     <button class="tab" onclick="go('margin',this)">Treatment margin</button>
     <button class="tab" onclick="go('log',this)">Log a treatment</button>
+    <button class="tab" onclick="go('staff',this)">Staff</button>
   </div>
 </div>
 
@@ -270,6 +272,62 @@
 
   <div class="panel">
     <div class="panel-h">
+      <h2>Procedures to prioritise</h2>
+      <span class="note">Driven by stock expiring within 30 days</span>
+    </div>
+    <table class="responsive">
+      <thead><tr><th>Procedure</th><th>Expiring ingredient</th><th>Expires in</th><th>Recommendation</th></tr></thead>
+      <tbody>
+        <tr class="row">
+          <td data-label="Procedure" class="prod">Upper face — 3 areas</td>
+          <td data-label="Expiring ingredient"><div>Neuromodulator 100u</div><div class="meta">Batch B-4471</div></td>
+          <td data-label="Expires in"><span class="pill red">11 days</span></td>
+          <td data-label="Recommendation">Consider prioritising bookings for this over the next 11 days.<div class="meta">~6 more treatments in this batch.</div></td>
+        </tr>
+        <tr class="row">
+          <td data-label="Procedure" class="prod">Lip filler — 1ml</td>
+          <td data-label="Expiring ingredient"><div>HA Dermal Filler 1.0ml</div><div class="meta">Batch F-2210</div></td>
+          <td data-label="Expires in"><span class="pill amber">24 days</span></td>
+          <td data-label="Recommendation">Consider prioritising bookings for this over the next 24 days.</td>
+        </tr>
+        <tr class="row">
+          <td data-label="Procedure" class="prod">Skin booster — full face</td>
+          <td data-label="Expiring ingredient"><div>Skin Booster 2.0ml</div><div class="meta">Batch S-8802</div></td>
+          <td data-label="Expires in"><span class="pill amber">29 days</span></td>
+          <td data-label="Recommendation">Consider prioritising bookings for this over the next 29 days.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-h">
+      <h2>Stock reorder forecast</h2>
+      <span class="note">Based on the last 90 days of usage</span>
+    </div>
+    <table class="responsive">
+      <thead><tr><th>Product</th><th>On hand</th><th>Avg. monthly usage</th><th>Runs out in</th><th>Suggested order qty</th></tr></thead>
+      <tbody>
+        <tr class="row">
+          <td data-label="Product" class="prod">Topical anaesthetic sachet</td>
+          <td data-label="On hand">7 sachets</td>
+          <td data-label="Avg. monthly usage">15.0 sachets</td>
+          <td data-label="Runs out in"><span class="pill red">14 days</span></td>
+          <td data-label="Suggested order qty">23 sachets</td>
+        </tr>
+        <tr class="row">
+          <td data-label="Product" class="prod">Needle 30g</td>
+          <td data-label="On hand">18 units</td>
+          <td data-label="Avg. monthly usage">36.0 units</td>
+          <td data-label="Runs out in"><span class="pill amber">15 days</span></td>
+          <td data-label="Suggested order qty">58 units</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-h">
       <h2>Dead stock — no movement in 90 days</h2>
       <span class="note">$3,120 tied up</span>
     </div>
@@ -321,6 +379,24 @@
     <div class="panel-foot">
       Gaps between drawn and billed are common with partial vials and top-ups. This is here to spot patterns worth a quick chat — not to score individual performance.
     </div>
+  </div>
+</div>
+
+<!-- ================= PRODUCTS ================= -->
+<div class="view" id="products">
+  <div class="head">
+    <div>
+      <h1>Products</h1>
+      <div class="sub">The catalog every treatment, batch and consumable references. Define a product once here, then receive stock or use it in a procedure.</div>
+    </div>
+    <button class="btn p">Add product</button>
+  </div>
+
+  <div class="panel">
+    <table class="responsive">
+      <thead><tr><th>Product</th><th>Category</th><th>Unit</th><th>Cost per unit</th><th>Default supplier</th><th>Reorder level</th><th>S4</th></tr></thead>
+      <tbody id="productsBody"></tbody>
+    </table>
   </div>
 </div>
 
@@ -485,12 +561,55 @@
   </div>
 </div>
 
+<!-- ================= STAFF ================= -->
+<div class="view" id="staff">
+  <div class="head">
+    <div>
+      <h1>Staff</h1>
+      <div class="sub">The clinicians who can be picked when logging a treatment. Names only — no login required.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <table class="responsive">
+      <thead><tr><th>Name</th><th>Added</th></tr></thead>
+      <tbody id="staffBody"></tbody>
+    </table>
+  </div>
+</div>
+
 <div class="foot">
   Prototype — fictional clinic, illustrative data. Nothing here is connected to a real system.
 </div>
 </div>
 
 <script>
+/* ---------- products catalog ---------- */
+const products=[
+ {p:'Neuromodulator 100u',cat:'Injectable',u:'vials',cost:320,s:'Ardent Medical',r:4,s4:true},
+ {p:'HA Dermal Filler 1.0ml',cat:'Injectable',u:'syringes',cost:155,s:'Ardent Medical',r:6,s4:false},
+ {p:'Skin Booster 2.0ml',cat:'Injectable',u:'vials',cost:130,s:'Meridian Supply',r:4,s4:false},
+ {p:'Collagen Stimulator',cat:'Injectable',u:'vials',cost:390,s:'Meridian Supply',r:2,s4:false},
+ {p:'PDO Threads — barbed',cat:'Device',u:'units',cost:97,s:'Northline Aesthetics',r:6,s4:false},
+ {p:'Cannula 25g',cat:'Consumable',u:'units',cost:4.20,s:'Northline Aesthetics',r:20,s4:false},
+ {p:'Needle 30g',cat:'Consumable',u:'units',cost:0.85,s:'Northline Aesthetics',r:40,s4:false},
+ {p:'Topical anaesthetic sachet',cat:'Consumable',u:'sachets',cost:3.10,s:'Meridian Supply',r:15,s4:false},
+ {p:'Procedure pack',cat:'Consumable',u:'packs',cost:6.40,s:'Northline Aesthetics',r:15,s4:false},
+ {p:'Gauze swabs 10cm',cat:'Consumable',u:'packs',cost:null,s:'Northline Aesthetics',r:50,s4:false},
+ {p:'Alcohol wipes (box of 200)',cat:'Consumable',u:'boxes',cost:null,s:'Meridian Supply',r:4,s4:false},
+ {p:'Sharps container 5L',cat:'Consumable',u:'units',cost:null,s:'Northline Aesthetics',r:3,s4:false},
+ {p:'Saline 5ml',cat:'Consumable',u:'vials',cost:null,s:null,r:10,s4:false},
+];
+document.getElementById('productsBody').innerHTML=products.map(r=>`<tr class="row">
+  <td data-label="Product" class="prod">${r.p}</td>
+  <td data-label="Category">${r.cat}</td>
+  <td data-label="Unit">${r.u}</td>
+  <td data-label="Cost per unit">${r.cost!=null?'$'+r.cost.toFixed(2):'—'}</td>
+  <td data-label="Default supplier">${r.s||'—'}</td>
+  <td data-label="Reorder level">${r.r} ${r.u}</td>
+  <td data-label="S4">${r.s4?'<span class="pill amber">S4</span>':'<span class="pill grey">—</span>'}</td>
+</tr>`).join('');
+
 /* ---------- stock table ---------- */
 const stock=[
  {p:'Neuromodulator 100u',s:'Ardent Medical',b:'B-4471',e:'02 Sep 2026',d:11,q:3,u:'vials',r:4,c:'$320',st:'expiring'},
@@ -578,6 +697,17 @@ document.getElementById('marginBody').innerHTML=treatmentMargin.map(t=>{
     <td data-label="Total contribution"><span class="ledger-total">$${t.total.toLocaleString('en-AU',{minimumFractionDigits:0,maximumFractionDigits:0})}</span></td>
   </tr>`;
 }).join('');
+
+/* ---------- staff ---------- */
+const staff=[
+ {name:'Steph M.',added:'12 Jan 2026'},
+ {name:'Nurse Amy',added:'03 Mar 2026'},
+ {name:'Nurse Jo',added:'22 Jun 2026'},
+];
+document.getElementById('staffBody').innerHTML=staff.map(s=>`<tr class="row">
+  <td data-label="Name" class="prod">${s.name}</td>
+  <td data-label="Added">${s.added}</td>
+</tr>`).join('');
 
 /* ---------- variance by clinician ---------- */
 const clinicianVariance=[
