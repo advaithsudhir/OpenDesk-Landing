@@ -7,6 +7,7 @@ const navItems = [
   { href: "/app/products", label: "Products", key: "products" },
   { href: "/app/stock", label: "Stock", key: "stock" },
   { href: "/app/consumables", label: "Consumables", key: "consumables" },
+  { href: "/app/reorder", label: "Reorder", key: "reorder" },
   { href: "/app/procedures", label: "Procedures", key: "procedures" },
   { href: "/app/margin", label: "Treatment margin", key: "margin" },
   { href: "/app/log-treatment", label: "Log treatment", key: "logTreatment" },
