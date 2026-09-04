@@ -50,6 +50,10 @@ type Log = {
   staff: { name: string } | null;
 };
 
+type Supply = { id: string; product_id: string; quantity: number; is_dosed: boolean };
+
+type ProcedureRow = { id: string; name: string; procedure_supplies: Supply[] };
+
 const DAY_MS = 86_400_000;
 
 function startOfQuarter(d: Date) {
@@ -87,7 +91,8 @@ export default async function AppPage() {
         products ( id, name, unit, default_supplier, cost_per_unit, reorder_level ),
         stock_batches ( id, product_id, batch_number, quantity, unit_cost, expiry_date, created_at ),
         treatment_log_items ( id, product_id, quantity_deducted, created_at ),
-        treatment_logs ( id, clinician_id, units_drawn, units_billed, created_at, staff ( name ) )
+        treatment_logs ( id, clinician_id, units_drawn, units_billed, created_at, staff ( name ) ),
+        procedures ( id, name, procedure_supplies ( id, product_id, quantity, is_dosed ) )
       )`
     )
     .eq("id", user.id)
@@ -101,6 +106,7 @@ export default async function AppPage() {
         stock_batches: Batch[];
         treatment_log_items: LogItem[];
         treatment_logs: Log[];
+        procedures: ProcedureRow[];
       }
     | null;
 
@@ -188,6 +194,40 @@ export default async function AppPage() {
     .filter((x) => x.days >= 0 && x.days <= 30)
     .sort((a, b) => a.days - b.days);
   const expiringValue = expiringBatches.reduce((sum, x) => sum + x.batch.quantity * effectiveCost(x.batch), 0);
+
+  // --- Procedures to prioritise: recipes that draw on expiring stock ---
+  const procedures = clinic.procedures || [];
+  const prioritise = procedures
+    .map((proc) => {
+      // expiringBatches is already sorted soonest-first, so .find() picks the
+      // soonest-expiring batch when a product has more than one expiring.
+      const candidates = proc.procedure_supplies
+        .map((line) => {
+          const match = expiringBatches.find((x) => x.batch.product_id === line.product_id);
+          return match ? { line, batch: match.batch, days: match.days } : null;
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+
+      if (candidates.length === 0) return null;
+
+      // One row per procedure — ranked by whichever ingredient expires soonest.
+      const driving = candidates.reduce((soonest, c) => (c.days < soonest.days ? c : soonest));
+      const product = productsById.get(driving.line.product_id);
+      const capacity = driving.line.is_dosed
+        ? Math.floor(driving.batch.quantity / driving.line.quantity)
+        : null;
+
+      return {
+        procedureId: proc.id,
+        procedureName: proc.name,
+        productName: product?.name || "—",
+        batchNumber: driving.batch.batch_number,
+        days: driving.days,
+        capacity,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => a.days - b.days);
 
   // --- KPI 2: below reorder point ---
   const onHandByProduct = new Map<string, number>();
@@ -391,6 +431,53 @@ export default async function AppPage() {
                       </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <h2>Procedures to prioritise</h2>
+              <span className={styles.panelNote}>Driven by stock expiring within 30 days</span>
+            </div>
+            {prioritise.length === 0 ? (
+              <div className={styles.empty}>No procedures are affected by expiring stock right now.</div>
+            ) : (
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Procedure</th>
+                    <th>Expiring ingredient</th>
+                    <th>Expires in</th>
+                    <th>Recommendation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {prioritise.map((row) => (
+                    <tr key={row.procedureId}>
+                      <td data-label="Procedure" className={styles.prod}>
+                        {row.procedureName}
+                      </td>
+                      <td data-label="Expiring ingredient">
+                        <div>{row.productName}</div>
+                        {row.batchNumber && <div className={styles.meta}>Batch {row.batchNumber}</div>}
+                      </td>
+                      <td data-label="Expires in">
+                        <span className={`${styles.pill} ${row.days <= 15 ? styles.pillRed : styles.pillAmber}`}>
+                          {row.days} days
+                        </span>
+                      </td>
+                      <td data-label="Recommendation">
+                        Consider prioritising bookings for this over the next {row.days} days.
+                        {row.capacity != null && (
+                          <div className={styles.meta}>
+                            ~{row.capacity} more treatment{row.capacity === 1 ? "" : "s"} in this batch.
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             )}
