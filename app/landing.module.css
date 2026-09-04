@@ -30,6 +30,16 @@
   white-space: nowrap;
 }
 
+.loginBtn {
+  transition: color 0.2s ease, border-color 0.2s ease;
+  flex: none;
+  white-space: nowrap;
+}
+.loginBtn:hover {
+  border-color: #7c9885 !important;
+  color: #1f2421 !important;
+}
+
 .shotLg {
   display: block;
   width: 100%;

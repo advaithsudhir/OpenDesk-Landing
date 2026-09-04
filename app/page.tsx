@@ -122,13 +122,29 @@ export default function Home() {
             <div style={{ fontSize: 17, letterSpacing: "0.01em", color: ink }}>
               open<span style={{ color: sage }}>•</span>desk
             </div>
-            <a
-              className={styles.lnk}
-              href={CONTACT_HREF}
-              style={{ fontSize: 14, color: stone, textDecoration: "none" }}
-            >
-              Get in touch
-            </a>
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              <a
+                className={styles.lnk}
+                href={CONTACT_HREF}
+                style={{ fontSize: 14, color: stone, textDecoration: "none" }}
+              >
+                Get in touch
+              </a>
+              <Link
+                className={styles.loginBtn}
+                href="/login"
+                style={{
+                  fontSize: 13.5,
+                  color: stone,
+                  textDecoration: "none",
+                  border: `1px solid ${line}`,
+                  borderRadius: 4,
+                  padding: "7px 14px",
+                }}
+              >
+                Log in
+              </Link>
+            </div>
           </header>
 
           {/* hero */}
@@ -623,9 +639,6 @@ export default function Home() {
               <a className={styles.lnk} href="#" style={{ color: stone, textDecoration: "none" }}>
                 Privacy
               </a>
-              <Link className={styles.lnk} href="/login" style={{ color: stone, textDecoration: "none" }}>
-                Log in
-              </Link>
               <span style={{ whiteSpace: "nowrap" }}>© 2026 Opendesk</span>
             </div>
           </footer>
