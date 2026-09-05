@@ -6,6 +6,7 @@ import AppHeader from "../AppHeader";
 import OrderCycleForm from "./OrderCycleForm";
 import styles from "./reorder.module.css";
 import { paper, ink, stone, fraunces } from "../../theme";
+import { computeReorderForecast } from "@/lib/insights";
 
 export const metadata: Metadata = {
   title: "Reorder forecast — Opendesk",
@@ -15,12 +16,6 @@ export const metadata: Metadata = {
 type Product = { id: string; name: string; unit: string; reorder_level: number };
 type Batch = { product_id: string; quantity: number };
 type LogItem = { product_id: string; quantity_deducted: number; created_at: string };
-
-const DAY_MS = 86_400_000;
-
-function daysBetween(a: Date, b: Date) {
-  return Math.floor((a.getTime() - b.getTime()) / DAY_MS);
-}
 
 export default async function ReorderPage() {
   const supabase = await createClient();
@@ -67,60 +62,13 @@ export default async function ReorderPage() {
 
   const today = new Date();
 
-  const notEnoughHistory: string[] = [];
-  const reorderList: {
-    product: Product;
-    onHand: number;
-    avgMonthlyUsage: number;
-    suggestedOrderQty: number;
-    daysUntilStockout: number;
-  }[] = [];
-
-  for (const p of products) {
-    const onHand = batches.filter((b) => b.product_id === p.id).reduce((sum, b) => sum + b.quantity, 0);
-    const productLogItems = logItems.filter((li) => li.product_id === p.id);
-
-    if (productLogItems.length === 0) {
-      notEnoughHistory.push(p.name);
-      continue;
-    }
-
-    const firstUsage = new Date(Math.min(...productLogItems.map((li) => new Date(li.created_at).getTime())));
-    const historyDays = daysBetween(today, firstUsage);
-
-    if (historyDays < 30) {
-      notEnoughHistory.push(p.name);
-      continue;
-    }
-
-    // The window boundary is either exactly `firstUsage` (history < 90 days,
-    // so every deduction on record must count) or exactly 90 days ago
-    // (history >= 90 days). Deriving it from a floored day-count instead
-    // (e.g. `today - Math.min(90, historyDays) days`) can land a few hours
-    // after `firstUsage` itself, silently excluding the very deduction that
-    // defines the window.
-    const windowStart = historyDays >= 90 ? new Date(today.getTime() - 90 * DAY_MS) : firstUsage;
-    const windowDays = Math.max(1, daysBetween(today, windowStart));
-    const totalConsumed = productLogItems
-      .filter((li) => new Date(li.created_at) >= windowStart)
-      .reduce((sum, li) => sum + li.quantity_deducted, 0);
-    const avgDailyUsage = totalConsumed / windowDays;
-
-    if (avgDailyUsage <= 0) continue;
-
-    const projectedNeed = avgDailyUsage * orderCycleDays;
-    if (onHand >= projectedNeed) continue;
-
-    reorderList.push({
-      product: p,
-      onHand,
-      avgMonthlyUsage: avgDailyUsage * 30,
-      suggestedOrderQty: projectedNeed - onHand + p.reorder_level,
-      daysUntilStockout: onHand / avgDailyUsage,
-    });
-  }
-
-  reorderList.sort((a, b) => a.daysUntilStockout - b.daysUntilStockout);
+  const { reorderList, notEnoughHistory } = computeReorderForecast(
+    products,
+    batches,
+    logItems,
+    orderCycleDays,
+    today
+  );
 
   return (
     <>

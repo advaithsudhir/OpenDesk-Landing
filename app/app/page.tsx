@@ -9,6 +9,7 @@ import AppHeader from "./AppHeader";
 import authStyles from "../auth.module.css";
 import styles from "./dashboard.module.css";
 import { paper, ink, stone, sage, fraunces } from "../theme";
+import { daysBetween, computeExpiringBatches, computeProceduresToPrioritise } from "@/lib/insights";
 
 export const metadata: Metadata = {
   title: "Dashboard — Opendesk",
@@ -54,8 +55,6 @@ type Supply = { id: string; product_id: string; quantity: number; is_dosed: bool
 
 type ProcedureRow = { id: string; name: string; procedure_supplies: Supply[] };
 
-const DAY_MS = 86_400_000;
-
 function startOfQuarter(d: Date) {
   const q = Math.floor(d.getMonth() / 3);
   return new Date(d.getFullYear(), q * 3, 1);
@@ -67,10 +66,6 @@ function addMonths(d: Date, months: number) {
 
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
-function daysBetween(a: Date, b: Date) {
-  return Math.floor((a.getTime() - b.getTime()) / DAY_MS);
 }
 
 export default async function AppPage() {
@@ -188,46 +183,12 @@ export default async function AppPage() {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   // --- KPI 1: expiring within 30 days ---
-  const expiringBatches = batches
-    .filter((b) => b.expiry_date && b.quantity > 0)
-    .map((b) => ({ batch: b, days: daysBetween(new Date(b.expiry_date as string), today) }))
-    .filter((x) => x.days >= 0 && x.days <= 30)
-    .sort((a, b) => a.days - b.days);
+  const expiringBatches = computeExpiringBatches(batches, today);
   const expiringValue = expiringBatches.reduce((sum, x) => sum + x.batch.quantity * effectiveCost(x.batch), 0);
 
   // --- Procedures to prioritise: recipes that draw on expiring stock ---
   const procedures = clinic.procedures || [];
-  const prioritise = procedures
-    .map((proc) => {
-      // expiringBatches is already sorted soonest-first, so .find() picks the
-      // soonest-expiring batch when a product has more than one expiring.
-      const candidates = proc.procedure_supplies
-        .map((line) => {
-          const match = expiringBatches.find((x) => x.batch.product_id === line.product_id);
-          return match ? { line, batch: match.batch, days: match.days } : null;
-        })
-        .filter((x): x is NonNullable<typeof x> => x !== null);
-
-      if (candidates.length === 0) return null;
-
-      // One row per procedure — ranked by whichever ingredient expires soonest.
-      const driving = candidates.reduce((soonest, c) => (c.days < soonest.days ? c : soonest));
-      const product = productsById.get(driving.line.product_id);
-      const capacity = driving.line.is_dosed
-        ? Math.floor(driving.batch.quantity / driving.line.quantity)
-        : null;
-
-      return {
-        procedureId: proc.id,
-        procedureName: proc.name,
-        productName: product?.name || "—",
-        batchNumber: driving.batch.batch_number,
-        days: driving.days,
-        capacity,
-      };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null)
-    .sort((a, b) => a.days - b.days);
+  const prioritise = computeProceduresToPrioritise(procedures, expiringBatches, productsById);
 
   // --- KPI 2: below reorder point ---
   const onHandByProduct = new Map<string, number>();
