@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import FontLinks from "../../FontLinks";
 import AppHeader from "../AppHeader";
 import AddStaffForm from "./AddStaffForm";
-import { removeStaff } from "./actions";
+import AddRecipientForm from "./AddRecipientForm";
+import { removeStaff, removeRecipient } from "./actions";
 import DeleteButton from "../DeleteButton";
 import styles from "./staff.module.css";
 import authStyles from "../../auth.module.css";
@@ -18,6 +19,12 @@ export const metadata: Metadata = {
 type Staff = {
   id: string;
   name: string;
+  created_at: string;
+};
+
+type Recipient = {
+  id: string;
+  email: string;
   created_at: string;
 };
 
@@ -38,17 +45,28 @@ export default async function StaffPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select(`clinic_id, clinics ( id, name, staff ( id, name, created_at ) )`)
+    .select(
+      `clinic_id, clinics (
+        id, name,
+        staff ( id, name, created_at ),
+        notification_recipients ( id, email, created_at )
+      )`
+    )
     .eq("id", user.id)
     .single();
 
-  const clinic = profile?.clinics as unknown as { id: string; name: string; staff: Staff[] } | null;
+  const clinic = profile?.clinics as unknown as
+    | { id: string; name: string; staff: Staff[]; notification_recipients: Recipient[] }
+    | null;
 
   if (!clinic) {
     redirect("/app");
   }
 
   const staff = [...(clinic.staff || [])].sort((a, b) => a.name.localeCompare(b.name));
+  const recipients = [...(clinic.notification_recipients || [])].sort((a, b) =>
+    a.email.localeCompare(b.email)
+  );
 
   return (
     <>
@@ -119,6 +137,66 @@ export default async function StaffPage({
                         <form action={removeStaff}>
                           <input type="hidden" name="staffId" value={s.id} />
                           <DeleteButton className={styles.removeBtn} confirmText={`Remove ${s.name}?`}>
+                            Remove
+                          </DeleteButton>
+                        </form>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <h2
+            style={{
+              ...fraunces,
+              fontSize: 19,
+              fontWeight: 400,
+              letterSpacing: "-0.01em",
+              margin: "40px 0 6px",
+            }}
+          >
+            Notification emails
+          </h2>
+          <p style={{ fontSize: 14, color: stone, marginBottom: 20 }}>
+            Who receives the weekly stock digest — expiry risk, procedures to prioritise, and
+            reorder flags. Doesn&apos;t need to be a clinician — a shared inbox works too.
+          </p>
+
+          <div className={styles.panel} style={{ padding: 24, marginBottom: 24 }}>
+            <AddRecipientForm />
+          </div>
+
+          <div className={styles.panel}>
+            {recipients.length === 0 ? (
+              <div className={styles.empty}>No recipients yet — add one above to start getting the digest.</div>
+            ) : (
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Added</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recipients.map((r) => (
+                    <tr key={r.id}>
+                      <td data-label="Email" className={styles.prod}>
+                        {r.email}
+                      </td>
+                      <td data-label="Added">
+                        {new Date(r.created_at).toLocaleDateString("en-AU", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </td>
+                      <td data-label="">
+                        <form action={removeRecipient}>
+                          <input type="hidden" name="recipientId" value={r.id} />
+                          <DeleteButton className={styles.removeBtn} confirmText={`Remove ${r.email}?`}>
                             Remove
                           </DeleteButton>
                         </form>
