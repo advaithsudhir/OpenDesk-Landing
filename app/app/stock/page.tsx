@@ -10,6 +10,7 @@ import DeleteButton from "../DeleteButton";
 import stockStyles from "./stock.module.css";
 import authStyles from "../../auth.module.css";
 import { paper, ink, stone, sageDeep, line, fraunces } from "../../theme";
+import { daysBetween, startOfDay } from "@/lib/insights";
 
 export const metadata: Metadata = {
   title: "Stock — Opendesk",
@@ -41,9 +42,10 @@ function getStatus(batch: Batch) {
   const reorderLevel = product?.reorder_level ?? 0;
 
   if (batch.expiry_date) {
-    const days = Math.floor(
-      (new Date(batch.expiry_date).getTime() - Date.now()) / 86_400_000
-    );
+    const days = daysBetween(new Date(batch.expiry_date), startOfDay(new Date()));
+    if (days < 0) {
+      return { label: "Expired", cls: stockStyles.pillExpired, days };
+    }
     if (days < 30) {
       return { label: "Expiring soon", cls: stockStyles.pillRed, days };
     }
@@ -203,8 +205,11 @@ export default async function StockPage({
                               })
                             : "—"}
                           {status.days !== null && status.days < 30 && (
-                            <span className={`${stockStyles.pill} ${stockStyles.pillRed}`} style={{ marginLeft: 6 }}>
-                              {status.days}d
+                            <span
+                              className={`${stockStyles.pill} ${status.days < 0 ? stockStyles.pillExpired : stockStyles.pillRed}`}
+                              style={{ marginLeft: 6 }}
+                            >
+                              {status.days < 0 ? `Expired ${Math.abs(status.days)}d ago` : `${status.days}d`}
                             </span>
                           )}
                         </td>

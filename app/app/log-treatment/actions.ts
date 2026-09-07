@@ -119,6 +119,9 @@ export async function logTreatment(
 
   revalidatePath("/app/stock");
   revalidatePath("/app/consumables");
+  revalidatePath("/app");
+  revalidatePath("/app/margin");
+  revalidatePath("/app/reorder");
 
   return { error: null, success: true, deductions, variance };
 }

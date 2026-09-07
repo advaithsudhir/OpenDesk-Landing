@@ -381,8 +381,10 @@ export default async function AppPage() {
                         </td>
                         <td data-label="Batch">{batch.batch_number || "—"}</td>
                         <td data-label="Expires">
-                          <span className={`${styles.pill} ${days <= 15 ? styles.pillRed : styles.pillAmber}`}>
-                            {days} days
+                          <span
+                            className={`${styles.pill} ${days < 0 ? styles.pillExpired : days <= 15 ? styles.pillRed : styles.pillAmber}`}
+                          >
+                            {days < 0 ? `Expired ${Math.abs(days)}d ago` : `${days} days`}
                           </span>
                         </td>
                         <td data-label="On hand">
@@ -425,12 +427,16 @@ export default async function AppPage() {
                         {row.batchNumber && <div className={styles.meta}>Batch {row.batchNumber}</div>}
                       </td>
                       <td data-label="Expires in">
-                        <span className={`${styles.pill} ${row.days <= 15 ? styles.pillRed : styles.pillAmber}`}>
-                          {row.days} days
+                        <span
+                          className={`${styles.pill} ${row.days < 0 ? styles.pillExpired : row.days <= 15 ? styles.pillRed : styles.pillAmber}`}
+                        >
+                          {row.days < 0 ? `Expired ${Math.abs(row.days)}d ago` : `${row.days} days`}
                         </span>
                       </td>
                       <td data-label="Recommendation">
-                        Consider prioritising bookings for this over the next {row.days} days.
+                        {row.days < 0
+                          ? "The stock behind this procedure has already expired — stop booking it until it's replaced."
+                          : `Consider prioritising bookings for this over the next ${row.days} days.`}
                         {row.capacity != null && (
                           <div className={styles.meta}>
                             ~{row.capacity} more treatment{row.capacity === 1 ? "" : "s"} in this batch.

@@ -29,11 +29,15 @@ type ExpiryBatch = {
 
 export type ExpiringBatch<B extends ExpiryBatch> = { batch: B; days: number };
 
+// Includes already-expired batches (negative days) on purpose — a batch
+// that expired yesterday is strictly more urgent than one expiring in 30
+// days, not something to hide. The ascending sort naturally puts the most
+// overdue batches first since more-negative values sort lowest.
 export function computeExpiringBatches<B extends ExpiryBatch>(batches: B[], today: Date): ExpiringBatch<B>[] {
   return batches
     .filter((b) => b.expiry_date && b.quantity > 0)
     .map((b) => ({ batch: b, days: daysBetween(new Date(b.expiry_date as string), today) }))
-    .filter((x) => x.days >= 0 && x.days <= 30)
+    .filter((x) => x.days <= 30)
     .sort((a, b) => a.days - b.days);
 }
 
