@@ -19,6 +19,7 @@ type Product = {
   id: string;
   name: string;
   category: string;
+  brand: string | null;
   unit: string;
   cost_per_unit: number | null;
   default_supplier: string | null;
@@ -47,7 +48,7 @@ export default async function ProductsPage({
     .select(
       `clinic_id, clinics (
         id, name,
-        products ( id, name, category, unit, cost_per_unit, default_supplier, reorder_level, is_s4, created_at )
+        products ( id, name, category, brand, unit, cost_per_unit, default_supplier, reorder_level, is_s4, created_at )
       )`
     )
     .eq("id", user.id)
@@ -111,6 +112,7 @@ export default async function ProductsPage({
                 <thead>
                   <tr>
                     <th>Product</th>
+                    <th>Brand</th>
                     <th>Category</th>
                     <th>Unit</th>
                     <th>Cost per unit</th>
@@ -126,6 +128,7 @@ export default async function ProductsPage({
                       <td data-label="Product" className={styles.prod}>
                         {p.name}
                       </td>
+                      <td data-label="Brand">{p.brand || "—"}</td>
                       <td data-label="Category">{p.category}</td>
                       <td data-label="Unit">{p.unit}</td>
                       <td data-label="Cost per unit">

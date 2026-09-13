@@ -14,6 +14,7 @@ export async function addProduct(
 ): Promise<AddProductState> {
   const name = String(formData.get("name") || "").trim();
   const category = String(formData.get("category") || "").trim();
+  const brand = String(formData.get("brand") || "").trim();
   const unit = String(formData.get("unit") || "").trim() || "units";
   const costPerUnitRaw = String(formData.get("costPerUnit") || "").trim();
   const defaultSupplier = String(formData.get("defaultSupplier") || "").trim();
@@ -53,6 +54,7 @@ export async function addProduct(
     clinic_id: profile.clinic_id,
     name,
     category,
+    brand: brand || null,
     unit,
     cost_per_unit: costPerUnitRaw ? Number(costPerUnitRaw) : null,
     default_supplier: defaultSupplier || null,

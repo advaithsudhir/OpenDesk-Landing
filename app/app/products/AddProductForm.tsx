@@ -45,6 +45,10 @@ export default function AddProductForm() {
         </select>
       </label>
       <label className={authStyles.label}>
+        Brand
+        <input className={authStyles.field} type="text" name="brand" placeholder="e.g. Teoxane" />
+      </label>
+      <label className={authStyles.label}>
         Unit
         <input className={authStyles.field} type="text" name="unit" placeholder="e.g. vials" defaultValue="units" />
       </label>

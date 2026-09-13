@@ -21,6 +21,7 @@ type Product = {
   id: string;
   name: string;
   category: string;
+  brand: string | null;
   unit: string;
   cost_per_unit: number | null;
   default_supplier: string | null;
@@ -79,10 +80,10 @@ export default async function StockPage({
     .select(
       `clinic_id, clinics (
         id, name,
-        products ( id, name, category, unit, cost_per_unit, default_supplier, reorder_level ),
+        products ( id, name, category, brand, unit, cost_per_unit, default_supplier, reorder_level ),
         stock_batches (
           id, batch_number, expiry_date, quantity, unit_cost, created_at,
-          products ( id, name, category, unit, cost_per_unit, default_supplier, reorder_level )
+          products ( id, name, category, brand, unit, cost_per_unit, default_supplier, reorder_level )
         )
       )`
     )

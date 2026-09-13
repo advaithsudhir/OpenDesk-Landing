@@ -6,7 +6,7 @@ import authStyles from "../../auth.module.css";
 
 const initialState: AddStockState = { error: null, success: false };
 
-type ProductOption = { id: string; name: string; unit: string };
+type ProductOption = { id: string; name: string; brand: string | null; unit: string };
 
 export default function AddStockForm({ products }: { products: ProductOption[] }) {
   const [state, formAction, pending] = useActionState(addStockBatch, initialState);
@@ -37,7 +37,7 @@ export default function AddStockForm({ products }: { products: ProductOption[] }
           </option>
           {products.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.name}
+              {p.brand ? `${p.name} (${p.brand})` : p.name}
             </option>
           ))}
         </select>
