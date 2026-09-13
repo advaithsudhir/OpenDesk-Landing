@@ -4,9 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import FontLinks from "../../FontLinks";
 import AppHeader from "../AppHeader";
-import NewProcedureForm from "./NewProcedureForm";
-import { removeProcedure } from "./actions";
-import DeleteButton from "../DeleteButton";
+import ProcedureForm from "./ProcedureForm";
+import ProcedureCard from "./ProcedureCard";
 import styles from "./procedures.module.css";
 import authStyles from "../../auth.module.css";
 import { paper, ink, stone, sageDeep, fraunces } from "../../theme";
@@ -126,7 +125,7 @@ export default async function ProceduresPage({
                 </Link>
               </div>
             ) : (
-              <NewProcedureForm products={products} />
+              <ProcedureForm products={products} mode="create" />
             )}
           </div>
 
@@ -136,41 +135,9 @@ export default async function ProceduresPage({
             </div>
           ) : (
             <div className={styles.rgrid}>
-              {procedures.map((proc) => {
-                const cost = proc.procedure_supplies.reduce(
-                  (sum, s) => sum + s.quantity * (s.products?.cost_per_unit ?? 0),
-                  0
-                );
-                return (
-                  <div key={proc.id} className={styles.rcard}>
-                    <div className={styles.cardHeader}>
-                      <h3>{proc.name}</h3>
-                      <form action={removeProcedure}>
-                        <input type="hidden" name="procedureId" value={proc.id} />
-                        <DeleteButton className={styles.removeBtn} confirmText={`Remove ${proc.name}?`}>
-                          Remove
-                        </DeleteButton>
-                      </form>
-                    </div>
-                    {proc.procedure_supplies.length === 0 ? (
-                      <div style={{ fontSize: 13, color: stone, fontStyle: "italic", marginBottom: 12 }}>
-                        No supplies added yet.
-                      </div>
-                    ) : (
-                      <ul>
-                        {proc.procedure_supplies.map((s) => (
-                          <li key={s.id}>
-                            {s.quantity} {s.is_dosed ? s.products?.unit : ""} × {s.products?.name}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <div className={styles.cost}>
-                      {proc.procedure_supplies.length === 0 ? "—" : `$${cost.toFixed(2)} in consumables`}
-                    </div>
-                  </div>
-                );
-              })}
+              {procedures.map((proc) => (
+                <ProcedureCard key={proc.id} procedure={proc} products={products} />
+              ))}
             </div>
           )}
 

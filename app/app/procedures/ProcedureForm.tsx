@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { createProcedure, type CreateProcedureState } from "./actions";
+import { createProcedure, updateProcedure, type CreateProcedureState } from "./actions";
 import authStyles from "../../auth.module.css";
 import styles from "./procedures.module.css";
 
@@ -12,16 +12,41 @@ type Line = { productId: string; quantity: string; isDosed: boolean };
 
 const emptyLine = (): Line => ({ productId: "", quantity: "", isDosed: false });
 
-export default function NewProcedureForm({ products }: { products: ProductOption[] }) {
-  const [state, formAction, pending] = useActionState(createProcedure, initialState);
+export type ProcedureFormInitial = {
+  id: string;
+  name: string;
+  price: number | null;
+  lines: Line[];
+};
+
+export default function ProcedureForm({
+  products,
+  mode = "create",
+  initial,
+  onDone,
+  onCancel,
+}: {
+  products: ProductOption[];
+  mode?: "create" | "edit";
+  initial?: ProcedureFormInitial;
+  onDone?: () => void;
+  onCancel?: () => void;
+}) {
+  const action = mode === "edit" ? updateProcedure : createProcedure;
+  const [state, formAction, pending] = useActionState(action, initialState);
   const formRef = useRef<HTMLFormElement>(null);
-  const [lines, setLines] = useState<Line[]>([emptyLine()]);
+  const [lines, setLines] = useState<Line[]>(initial?.lines.length ? initial.lines : [emptyLine()]);
 
   useEffect(() => {
     if (state.success) {
-      formRef.current?.reset();
-      setLines([emptyLine()]);
+      if (mode === "create") {
+        formRef.current?.reset();
+        setLines([emptyLine()]);
+      }
+      onDone?.();
     }
+    // Only re-run when the action's result identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
   const updateLine = (index: number, patch: Partial<Line>) => {
@@ -45,6 +70,7 @@ export default function NewProcedureForm({ products }: { products: ProductOption
   return (
     <form ref={formRef} action={formAction}>
       <input type="hidden" name="linesJson" value={linesJson} />
+      {mode === "edit" && initial && <input type="hidden" name="procedureId" value={initial.id} />}
 
       <div
         style={{
@@ -57,11 +83,25 @@ export default function NewProcedureForm({ products }: { products: ProductOption
       >
         <label className={authStyles.label}>
           Procedure name
-          <input className={authStyles.field} type="text" name="name" required />
+          <input
+            className={authStyles.field}
+            type="text"
+            name="name"
+            defaultValue={initial?.name}
+            required
+          />
         </label>
         <label className={authStyles.label}>
           Price charged ($) — optional
-          <input className={authStyles.field} type="number" name="price" min={0} step="0.01" placeholder="Add later" />
+          <input
+            className={authStyles.field}
+            type="number"
+            name="price"
+            min={0}
+            step="0.01"
+            defaultValue={initial?.price ?? ""}
+            placeholder="Add later"
+          />
         </label>
       </div>
 
@@ -122,8 +162,13 @@ export default function NewProcedureForm({ products }: { products: ProductOption
 
       <div style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 16 }}>
         <button className={authStyles.btn} type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save procedure"}
+          {pending ? "Saving…" : mode === "edit" ? "Save changes" : "Save procedure"}
         </button>
+        {mode === "edit" && (
+          <button type="button" onClick={onCancel} className={styles.removeBtn}>
+            Cancel
+          </button>
+        )}
         {state.error && (
           <div className={authStyles.error} role="alert">
             {state.error}
