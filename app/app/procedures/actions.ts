@@ -19,8 +19,13 @@ export async function createProcedure(
   if (!name) {
     return { error: "Enter a procedure name.", success: false };
   }
-  if (!priceRaw || !Number.isFinite(Number(priceRaw)) || Number(priceRaw) < 0) {
-    return { error: "Enter a valid price.", success: false };
+
+  let price: number | null = null;
+  if (priceRaw) {
+    price = Number(priceRaw);
+    if (!Number.isFinite(price) || price < 0) {
+      return { error: "Enter a valid price.", success: false };
+    }
   }
 
   let lines: Line[];
@@ -30,10 +35,9 @@ export async function createProcedure(
     return { error: "Something went wrong reading the supply lines.", success: false };
   }
 
+  // Empty is allowed — a procedure can be saved as a name-only shell (no
+  // price, no recipe yet) and filled in later once real data arrives.
   const validLines = lines.filter((l) => l.productId && Number.isFinite(l.quantity) && l.quantity > 0);
-  if (validLines.length === 0) {
-    return { error: "Add at least one supply line with a product and quantity.", success: false };
-  }
   if (validLines.filter((l) => l.isDosed).length > 1) {
     return { error: "Only one supply line can be dosed.", success: false };
   }
@@ -60,7 +64,7 @@ export async function createProcedure(
   const { error } = await supabase.rpc("create_procedure_with_supplies", {
     p_clinic_id: profile.clinic_id,
     p_name: name,
-    p_price: Number(priceRaw),
+    p_price: price,
     p_lines: validLines.map((l) => ({
       product_id: l.productId,
       quantity: l.quantity,

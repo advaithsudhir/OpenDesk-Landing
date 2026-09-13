@@ -60,8 +60,8 @@ export default function NewProcedureForm({ products }: { products: ProductOption
           <input className={authStyles.field} type="text" name="name" required />
         </label>
         <label className={authStyles.label}>
-          Price charged ($)
-          <input className={authStyles.field} type="number" name="price" min={0} step="0.01" required />
+          Price charged ($) — optional
+          <input className={authStyles.field} type="number" name="price" min={0} step="0.01" placeholder="Add later" />
         </label>
       </div>
 
@@ -74,7 +74,6 @@ export default function NewProcedureForm({ products }: { products: ProductOption
                 className={authStyles.field}
                 value={line.productId}
                 onChange={(e) => updateLine(index, { productId: e.target.value })}
-                required
               >
                 <option value="" disabled>
                   Select a product
@@ -95,7 +94,6 @@ export default function NewProcedureForm({ products }: { products: ProductOption
                 step="0.01"
                 value={line.quantity}
                 onChange={(e) => updateLine(index, { quantity: e.target.value })}
-                required
               />
             </label>
             <button

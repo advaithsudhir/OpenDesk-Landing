@@ -152,14 +152,22 @@ export default async function ProceduresPage({
                         </DeleteButton>
                       </form>
                     </div>
-                    <ul>
-                      {proc.procedure_supplies.map((s) => (
-                        <li key={s.id}>
-                          {s.quantity} {s.is_dosed ? s.products?.unit : ""} × {s.products?.name}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className={styles.cost}>${cost.toFixed(2)} in consumables</div>
+                    {proc.procedure_supplies.length === 0 ? (
+                      <div style={{ fontSize: 13, color: stone, fontStyle: "italic", marginBottom: 12 }}>
+                        No supplies added yet.
+                      </div>
+                    ) : (
+                      <ul>
+                        {proc.procedure_supplies.map((s) => (
+                          <li key={s.id}>
+                            {s.quantity} {s.is_dosed ? s.products?.unit : ""} × {s.products?.name}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className={styles.cost}>
+                      {proc.procedure_supplies.length === 0 ? "—" : `$${cost.toFixed(2)} in consumables`}
+                    </div>
                   </div>
                 );
               })}
