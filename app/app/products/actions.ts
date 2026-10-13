@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type AddProductState = { error: string | null; success: boolean };
 
-const CATEGORIES = ["Injectable", "Skincare", "Consumable", "Device", "Other"] as const;
+const CATEGORIES = ["Injectable", "Skincare", "Consumable", "Device", "Sample", "Other"] as const;
 
 export async function addProduct(
   _prevState: AddProductState,

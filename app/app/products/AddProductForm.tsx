@@ -41,6 +41,7 @@ export default function AddProductForm() {
           <option>Skincare</option>
           <option>Consumable</option>
           <option>Device</option>
+          <option>Sample</option>
           <option>Other</option>
         </select>
       </label>

@@ -9,6 +9,7 @@ export type Deduction = {
   unit: string;
   quantity: number;
   batchLabel: string | null;
+  isSample: boolean;
 };
 
 export type Variance = {
@@ -34,6 +35,8 @@ export async function logTreatment(
   const clinicianId = String(formData.get("clinicianId") || "").trim();
   const unitsDrawnRaw = String(formData.get("unitsDrawn") || "").trim();
   const unitsBilledRaw = String(formData.get("unitsBilled") || "").trim();
+  const samplesGiven = formData.get("samplesGiven") === "on";
+  const samplesJson = String(formData.get("samplesJson") || "[]");
 
   if (!procedureId || !clinicianId) {
     return { ...initial, error: "Select a clinician and treatment above." };
@@ -41,6 +44,19 @@ export async function logTreatment(
 
   const unitsDrawn = unitsDrawnRaw ? Number(unitsDrawnRaw) : null;
   const unitsBilled = unitsBilledRaw ? Number(unitsBilledRaw) : null;
+
+  let samples: { productId: string; quantity: number }[] = [];
+  if (samplesGiven) {
+    try {
+      samples = JSON.parse(samplesJson);
+    } catch {
+      return { ...initial, error: "Something went wrong reading the sample lines." };
+    }
+    samples = samples.filter((s) => s.productId && Number.isFinite(s.quantity) && s.quantity > 0);
+    if (samples.length === 0) {
+      return { ...initial, error: "Add at least one sample product and quantity, or untick Samples given." };
+    }
+  }
 
   const supabase = await createClient();
   const {
@@ -67,6 +83,7 @@ export async function logTreatment(
     p_clinician_id: clinicianId,
     p_units_drawn: unitsDrawn,
     p_units_billed: unitsBilled,
+    p_samples: samplesGiven ? samples.map((s) => ({ product_id: s.productId, quantity: s.quantity })) : null,
   });
 
   if (error) {
@@ -83,12 +100,13 @@ export async function logTreatment(
   const { data: items } = await supabase
     .from("treatment_log_items")
     .select(
-      `quantity_deducted, products ( name, unit ), stock_batches ( batch_number, expiry_date )`
+      `quantity_deducted, is_sample, products ( name, unit ), stock_batches ( batch_number, expiry_date )`
     )
     .eq("treatment_log_id", logId);
 
   type Item = {
     quantity_deducted: number;
+    is_sample: boolean;
     products: { name: string; unit: string } | null;
     stock_batches: { batch_number: string | null; expiry_date: string | null } | null;
   };
@@ -105,6 +123,7 @@ export async function logTreatment(
       unit: item.products?.unit || "units",
       quantity: item.quantity_deducted,
       batchLabel,
+      isSample: item.is_sample,
     };
   });
 

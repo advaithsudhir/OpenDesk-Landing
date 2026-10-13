@@ -22,6 +22,7 @@ type Supply = {
   products: { id: string; name: string; unit: string } | null;
 };
 type Procedure = { id: string; name: string; procedure_supplies: Supply[] };
+type SampleProduct = { id: string; name: string; unit: string; category: string };
 
 export default async function LogTreatmentPage() {
   const supabase = await createClient();
@@ -42,14 +43,15 @@ export default async function LogTreatmentPage() {
         procedures (
           id, name,
           procedure_supplies ( id, quantity, is_dosed, products ( id, name, unit ) )
-        )
+        ),
+        products ( id, name, unit, category )
       )`
     )
     .eq("id", user.id)
     .single();
 
   const clinic = profile?.clinics as unknown as
-    | { id: string; name: string; staff: Staff[]; procedures: Procedure[] }
+    | { id: string; name: string; staff: Staff[]; procedures: Procedure[]; products: SampleProduct[] }
     | null;
 
   if (!clinic) {
@@ -58,6 +60,9 @@ export default async function LogTreatmentPage() {
 
   const staff = [...(clinic.staff || [])].sort((a, b) => a.name.localeCompare(b.name));
   const procedures = [...(clinic.procedures || [])].sort((a, b) => a.name.localeCompare(b.name));
+  const sampleProducts = (clinic.products || [])
+    .filter((p) => p.category === "Sample")
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const missingStaff = staff.length === 0;
   const missingProcedures = procedures.length === 0;
@@ -121,7 +126,7 @@ export default async function LogTreatmentPage() {
                 )}
               </div>
             ) : (
-              <LogTreatmentForm staff={staff} procedures={procedures} />
+              <LogTreatmentForm staff={staff} procedures={procedures} sampleProducts={sampleProducts} />
             )}
           </div>
         </main>

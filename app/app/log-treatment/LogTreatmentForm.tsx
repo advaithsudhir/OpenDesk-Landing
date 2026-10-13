@@ -10,19 +10,27 @@ const initialState: LogTreatmentState = { error: null, success: false, deduction
 type Staff = { id: string; name: string };
 type Supply = { id: string; quantity: number; is_dosed: boolean; products: { id: string; name: string; unit: string } | null };
 type Procedure = { id: string; name: string; procedure_supplies: Supply[] };
+type SampleProduct = { id: string; name: string; unit: string };
+type SampleLine = { productId: string; quantity: string };
+
+const emptySampleLine = (): SampleLine => ({ productId: "", quantity: "" });
 
 export default function LogTreatmentForm({
   staff,
   procedures,
+  sampleProducts,
 }: {
   staff: Staff[];
   procedures: Procedure[];
+  sampleProducts: SampleProduct[];
 }) {
   const [state, formAction, pending] = useActionState(logTreatment, initialState);
   const [procedureId, setProcedureId] = useState("");
   const [clinicianId, setClinicianId] = useState("");
   const [unitsDrawn, setUnitsDrawn] = useState("");
   const [unitsBilled, setUnitsBilled] = useState("");
+  const [samplesGiven, setSamplesGiven] = useState(false);
+  const [sampleLines, setSampleLines] = useState<SampleLine[]>([emptySampleLine()]);
 
   const selectedProcedure = procedures.find((p) => p.id === procedureId) || null;
   const dosedLine = selectedProcedure?.procedure_supplies.find((s) => s.is_dosed) || null;
@@ -43,8 +51,25 @@ export default function LogTreatmentForm({
       setClinicianId("");
       setUnitsDrawn("");
       setUnitsBilled("");
+      setSamplesGiven(false);
+      setSampleLines([emptySampleLine()]);
     }
   }, [state]);
+
+  const updateSampleLine = (index: number, patch: Partial<SampleLine>) => {
+    setSampleLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+  };
+
+  const removeSampleLine = (index: number) => {
+    setSampleLines((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const samplesJson = JSON.stringify(
+    sampleLines.map((l) => ({ productId: l.productId, quantity: Number(l.quantity) }))
+  );
+
+  const treatmentDeductions = state.deductions.filter((d) => !d.isSample);
+  const sampleDeductions = state.deductions.filter((d) => d.isSample);
 
   const clinicianName = staff.find((s) => s.id === clinicianId)?.name;
 
@@ -61,6 +86,7 @@ export default function LogTreatmentForm({
     <form action={formAction}>
       <input type="hidden" name="procedureId" value={procedureId} />
       <input type="hidden" name="clinicianId" value={clinicianId} />
+      <input type="hidden" name="samplesJson" value={samplesJson} />
 
       <label className={authStyles.label} style={{ maxWidth: 280, marginBottom: 24 }}>
         Clinician
@@ -125,6 +151,80 @@ export default function LogTreatmentForm({
         </div>
       )}
 
+      {sampleProducts.length > 0 && (
+        <div className={styles.doseBox} style={{ marginTop: dosedLine ? 16 : 24 }}>
+          <label
+            className={authStyles.label}
+            style={{ flexDirection: "row", alignItems: "center", gap: 8, textTransform: "none" }}
+          >
+            <input
+              type="checkbox"
+              name="samplesGiven"
+              checked={samplesGiven}
+              onChange={(e) => setSamplesGiven(e.target.checked)}
+              style={{ width: 16, height: 16 }}
+            />
+            Samples given
+          </label>
+
+          {samplesGiven && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {sampleLines.map((line, index) => (
+                  <div key={index} className={styles.sampleLineRow}>
+                    <label className={authStyles.label}>
+                      {index === 0 ? "Sample product" : ""}
+                      <select
+                        className={authStyles.field}
+                        value={line.productId}
+                        onChange={(e) => updateSampleLine(index, { productId: e.target.value })}
+                      >
+                        <option value="" disabled>
+                          Select a product
+                        </option>
+                        {sampleProducts.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className={authStyles.label}>
+                      {index === 0 ? "Quantity" : ""}
+                      <input
+                        className={authStyles.field}
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={line.quantity}
+                        onChange={(e) => updateSampleLine(index, { quantity: e.target.value })}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => removeSampleLine(index)}
+                      className={styles.removeLineBtn}
+                      disabled={sampleLines.length === 1}
+                      aria-label="Remove sample line"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setSampleLines((prev) => [...prev, emptySampleLine()])}
+                className={styles.addLineBtn}
+                style={{ marginTop: 12 }}
+              >
+                + Add sample line
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{ marginTop: 24, display: "flex", alignItems: "center", gap: 16 }}>
         <button
           className={authStyles.btn}
@@ -145,17 +245,40 @@ export default function LogTreatmentForm({
       {state.success && (
         <div className={`${styles.panel} ${styles.deductBox}`}>
           <h3>Deducted automatically</h3>
-          {state.deductions.map((d, i) => (
-            <div key={i} className={styles.deductRow}>
-              <div>
-                <div>{d.productName}</div>
-                {d.batchLabel && <div className={styles.deductMeta}>{d.batchLabel}</div>}
-              </div>
-              <div className={styles.deductQty}>
-                − {d.quantity} {d.unit}
-              </div>
-            </div>
-          ))}
+
+          {treatmentDeductions.length > 0 && (
+            <>
+              {sampleDeductions.length > 0 && <div className={styles.subLabel}>Treatment supplies</div>}
+              {treatmentDeductions.map((d, i) => (
+                <div key={i} className={styles.deductRow}>
+                  <div>
+                    <div>{d.productName}</div>
+                    {d.batchLabel && <div className={styles.deductMeta}>{d.batchLabel}</div>}
+                  </div>
+                  <div className={styles.deductQty}>
+                    − {d.quantity} {d.unit}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {sampleDeductions.length > 0 && (
+            <>
+              <div className={styles.subLabel}>Samples given</div>
+              {sampleDeductions.map((d, i) => (
+                <div key={i} className={styles.deductRow}>
+                  <div>
+                    <div>{d.productName}</div>
+                    {d.batchLabel && <div className={styles.deductMeta}>{d.batchLabel}</div>}
+                  </div>
+                  <div className={styles.deductQty}>
+                    − {d.quantity} {d.unit}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
 
           {state.variance && (
             <span className={`${styles.pill} ${state.variance.status === "matched" ? styles.pillGreen : styles.pillAmber}`}>
