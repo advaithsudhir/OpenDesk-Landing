@@ -16,7 +16,9 @@ export async function addProduct(
   const category = String(formData.get("category") || "").trim();
   const brand = String(formData.get("brand") || "").trim();
   const unit = String(formData.get("unit") || "").trim() || "units";
-  const costPerUnitRaw = String(formData.get("costPerUnit") || "").trim();
+  const packName = String(formData.get("packName") || "").trim() || "unit";
+  const packSize = Number(formData.get("packSize") || 1);
+  const costPerPackRaw = String(formData.get("costPerPack") || "").trim();
   const defaultSupplier = String(formData.get("defaultSupplier") || "").trim();
   const reorderLevel = Number(formData.get("reorderLevel") || 0);
   const isS4 = formData.get("isS4") === "on";
@@ -26,6 +28,9 @@ export async function addProduct(
   }
   if (!CATEGORIES.includes(category as (typeof CATEGORIES)[number])) {
     return { error: "Select a category.", success: false };
+  }
+  if (!Number.isFinite(packSize) || packSize <= 0) {
+    return { error: "Amount per pack must be a positive number.", success: false };
   }
   if (!Number.isFinite(reorderLevel) || reorderLevel < 0) {
     return { error: "Reorder level must be a positive number.", success: false };
@@ -56,7 +61,9 @@ export async function addProduct(
     category,
     brand: brand || null,
     unit,
-    cost_per_unit: costPerUnitRaw ? Number(costPerUnitRaw) : null,
+    pack_name: packName,
+    pack_size: packSize,
+    cost_per_unit: costPerPackRaw ? Number(costPerPackRaw) / packSize : null,
     default_supplier: defaultSupplier || null,
     reorder_level: reorderLevel,
     is_s4: isS4,

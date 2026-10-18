@@ -11,13 +11,13 @@ export async function addConsumable(
   formData: FormData
 ): Promise<AddConsumableState> {
   const productId = String(formData.get("productId") || "").trim();
-  const quantity = Number(formData.get("quantity") || 0);
+  const packsReceived = Number(formData.get("packsReceived") || 0);
 
   if (!productId) {
     return { error: "Select a product.", success: false };
   }
-  if (!Number.isFinite(quantity) || quantity < 0) {
-    return { error: "Quantity must be a positive number.", success: false };
+  if (!Number.isFinite(packsReceived) || packsReceived < 0) {
+    return { error: "Packs received must be a positive number.", success: false };
   }
 
   const supabase = await createClient();
@@ -38,6 +38,19 @@ export async function addConsumable(
   if (!profile?.clinic_id) {
     return { error: "Your account isn't linked to a clinic yet.", success: false };
   }
+
+  const { data: product } = await supabase
+    .from("products")
+    .select("pack_size")
+    .eq("id", productId)
+    .eq("clinic_id", profile.clinic_id)
+    .single();
+
+  if (!product) {
+    return { error: "Select a valid product.", success: false };
+  }
+
+  const quantity = packsReceived * product.pack_size;
 
   const { error } = await supabase.from("stock_batches").insert({
     clinic_id: profile.clinic_id,

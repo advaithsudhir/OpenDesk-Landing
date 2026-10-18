@@ -8,7 +8,12 @@ import styles from "./log.module.css";
 const initialState: LogTreatmentState = { error: null, success: false, deductions: [], variance: null };
 
 type Staff = { id: string; name: string };
-type Supply = { id: string; quantity: number; is_dosed: boolean; products: { id: string; name: string; unit: string } | null };
+type Supply = {
+  id: string;
+  quantity: number;
+  is_dosed: boolean;
+  products: { id: string; name: string; unit: string; pack_name: string } | null;
+};
 type Procedure = { id: string; name: string; procedure_supplies: Supply[] };
 type SampleProduct = { id: string; name: string; unit: string };
 type SampleLine = { productId: string; quantity: string };
@@ -126,7 +131,10 @@ export default function LogTreatmentForm({
           <h4>Dosing — {dosedLine.products?.name}</h4>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
             <label className={authStyles.label}>
-              Units drawn from vial
+              Units drawn from{" "}
+              {dosedLine.products?.pack_name && dosedLine.products.pack_name.toLowerCase() !== "unit"
+                ? dosedLine.products.pack_name.toLowerCase()
+                : "vial"}
               <input
                 className={authStyles.field}
                 type="number"

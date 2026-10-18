@@ -51,11 +51,19 @@ export default function AddProductForm() {
       </label>
       <label className={authStyles.label}>
         Unit
-        <input className={authStyles.field} type="text" name="unit" placeholder="e.g. vials" defaultValue="units" />
+        <input className={authStyles.field} type="text" name="unit" placeholder="e.g. units, mL" defaultValue="units" />
       </label>
       <label className={authStyles.label}>
-        Cost per unit ($)
-        <input className={authStyles.field} type="number" name="costPerUnit" min={0} step="0.01" />
+        Pack name
+        <input className={authStyles.field} type="text" name="packName" placeholder="e.g. Vial, Box" defaultValue="unit" />
+      </label>
+      <label className={authStyles.label}>
+        Amount per pack
+        <input className={authStyles.field} type="number" name="packSize" min={0.01} step="0.01" defaultValue={1} />
+      </label>
+      <label className={authStyles.label}>
+        Cost per pack ($)
+        <input className={authStyles.field} type="number" name="costPerPack" min={0} step="0.01" />
       </label>
       <label className={authStyles.label}>
         Default supplier

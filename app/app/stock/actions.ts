@@ -13,14 +13,14 @@ export async function addStockBatch(
   const productId = String(formData.get("productId") || "").trim();
   const batchNumber = String(formData.get("batchNumber") || "").trim();
   const expiryDate = String(formData.get("expiryDate") || "").trim();
-  const quantity = Number(formData.get("quantity") || 0);
-  const unitCostRaw = String(formData.get("unitCost") || "").trim();
+  const packsReceived = Number(formData.get("packsReceived") || 0);
+  const packCostRaw = String(formData.get("packCost") || "").trim();
 
   if (!productId) {
     return { error: "Select a product.", success: false };
   }
-  if (!Number.isFinite(quantity) || quantity < 0) {
-    return { error: "Quantity must be a positive number.", success: false };
+  if (!Number.isFinite(packsReceived) || packsReceived < 0) {
+    return { error: "Packs received must be a positive number.", success: false };
   }
 
   const supabase = await createClient();
@@ -42,13 +42,27 @@ export async function addStockBatch(
     return { error: "Your account isn't linked to a clinic yet.", success: false };
   }
 
+  const { data: product } = await supabase
+    .from("products")
+    .select("pack_size")
+    .eq("id", productId)
+    .eq("clinic_id", profile.clinic_id)
+    .single();
+
+  if (!product) {
+    return { error: "Select a valid product.", success: false };
+  }
+
+  const quantity = packsReceived * product.pack_size;
+  const unitCost = packCostRaw ? Number(packCostRaw) / product.pack_size : null;
+
   const { error } = await supabase.from("stock_batches").insert({
     clinic_id: profile.clinic_id,
     product_id: productId,
     batch_number: batchNumber || null,
     expiry_date: expiryDate || null,
     quantity,
-    unit_cost: unitCostRaw ? Number(unitCostRaw) : null,
+    unit_cost: unitCost,
   });
 
   if (error) {

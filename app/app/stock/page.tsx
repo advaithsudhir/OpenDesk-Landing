@@ -11,6 +11,7 @@ import stockStyles from "./stock.module.css";
 import authStyles from "../../auth.module.css";
 import { paper, ink, stone, sageDeep, line, fraunces } from "../../theme";
 import { daysBetween, startOfDay } from "@/lib/insights";
+import { formatOnHand } from "@/lib/packs";
 
 export const metadata: Metadata = {
   title: "Stock — Opendesk",
@@ -23,6 +24,8 @@ type Product = {
   category: string;
   brand: string | null;
   unit: string;
+  pack_name: string;
+  pack_size: number;
   cost_per_unit: number | null;
   default_supplier: string | null;
   reorder_level: number;
@@ -80,10 +83,10 @@ export default async function StockPage({
     .select(
       `clinic_id, clinics (
         id, name,
-        products ( id, name, category, brand, unit, cost_per_unit, default_supplier, reorder_level ),
+        products ( id, name, category, brand, unit, pack_name, pack_size, cost_per_unit, default_supplier, reorder_level ),
         stock_batches (
           id, batch_number, expiry_date, quantity, unit_cost, created_at,
-          products ( id, name, category, brand, unit, cost_per_unit, default_supplier, reorder_level )
+          products ( id, name, category, brand, unit, pack_name, pack_size, cost_per_unit, default_supplier, reorder_level )
         )
       )`
     )
@@ -215,7 +218,7 @@ export default async function StockPage({
                           )}
                         </td>
                         <td data-label="On hand">
-                          {batch.quantity} {product.unit}
+                          {formatOnHand(batch.quantity, product.pack_name, product.pack_size, product.unit)}
                           <div className={stockStyles.bar}>
                             <div
                               className={stockStyles.barFill}

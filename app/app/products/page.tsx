@@ -21,6 +21,8 @@ type Product = {
   category: string;
   brand: string | null;
   unit: string;
+  pack_name: string;
+  pack_size: number;
   cost_per_unit: number | null;
   default_supplier: string | null;
   reorder_level: number;
@@ -48,7 +50,7 @@ export default async function ProductsPage({
     .select(
       `clinic_id, clinics (
         id, name,
-        products ( id, name, category, brand, unit, cost_per_unit, default_supplier, reorder_level, is_s4, created_at )
+        products ( id, name, category, brand, unit, pack_name, pack_size, cost_per_unit, default_supplier, reorder_level, is_s4, created_at )
       )`
     )
     .eq("id", user.id)
@@ -115,6 +117,7 @@ export default async function ProductsPage({
                     <th>Brand</th>
                     <th>Category</th>
                     <th>Unit</th>
+                    <th>Pack</th>
                     <th>Cost per unit</th>
                     <th>Default supplier</th>
                     <th>Reorder level</th>
@@ -131,6 +134,9 @@ export default async function ProductsPage({
                       <td data-label="Brand">{p.brand || "—"}</td>
                       <td data-label="Category">{p.category}</td>
                       <td data-label="Unit">{p.unit}</td>
+                      <td data-label="Pack">
+                        {p.pack_name.charAt(0).toUpperCase() + p.pack_name.slice(1)} · {p.pack_size} {p.unit}
+                      </td>
                       <td data-label="Cost per unit">
                         {p.cost_per_unit != null ? `$${p.cost_per_unit.toFixed(2)}` : "—"}
                       </td>

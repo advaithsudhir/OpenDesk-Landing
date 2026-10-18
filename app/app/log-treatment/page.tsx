@@ -19,7 +19,7 @@ type Supply = {
   id: string;
   quantity: number;
   is_dosed: boolean;
-  products: { id: string; name: string; unit: string } | null;
+  products: { id: string; name: string; unit: string; pack_name: string } | null;
 };
 type Procedure = { id: string; name: string; procedure_supplies: Supply[] };
 type SampleProduct = { id: string; name: string; unit: string; category: string };
@@ -42,7 +42,7 @@ export default async function LogTreatmentPage() {
         staff ( id, name ),
         procedures (
           id, name,
-          procedure_supplies ( id, quantity, is_dosed, products ( id, name, unit ) )
+          procedure_supplies ( id, quantity, is_dosed, products ( id, name, unit, pack_name ) )
         ),
         products ( id, name, unit, category )
       )`

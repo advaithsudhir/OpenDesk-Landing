@@ -10,6 +10,7 @@ import DeleteButton from "../DeleteButton";
 import styles from "./consumables.module.css";
 import authStyles from "../../auth.module.css";
 import { paper, ink, stone, sageDeep, fraunces } from "../../theme";
+import { formatOnHand } from "@/lib/packs";
 
 export const metadata: Metadata = {
   title: "Consumables — Opendesk",
@@ -21,6 +22,8 @@ type Product = {
   name: string;
   category: string;
   unit: string;
+  pack_name: string;
+  pack_size: number;
   default_supplier: string | null;
   reorder_level: number;
 };
@@ -53,8 +56,8 @@ export default async function ConsumablesPage({
     .select(
       `clinic_id, clinics (
         id, name,
-        products ( id, name, category, unit, default_supplier, reorder_level ),
-        stock_batches ( quantity, products ( id, name, category, unit, default_supplier, reorder_level ) )
+        products ( id, name, category, unit, pack_name, pack_size, default_supplier, reorder_level ),
+        stock_batches ( quantity, products ( id, name, category, unit, pack_name, pack_size, default_supplier, reorder_level ) )
       )`
     )
     .eq("id", user.id)
@@ -161,7 +164,7 @@ export default async function ConsumablesPage({
                           {product.name}
                         </td>
                         <td data-label="On hand">
-                          {quantity} {product.unit}
+                          {formatOnHand(quantity, product.pack_name, product.pack_size, product.unit)}
                         </td>
                         <td data-label="Minimum level">
                           {product.reorder_level} {product.unit}
