@@ -2,6 +2,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { logTreatment, type LogTreatmentState } from "./actions";
+import FaceDiagram from "./FaceDiagram";
+import { faceAreaLabel } from "@/lib/faceAreas";
 import authStyles from "../../auth.module.css";
 import styles from "./log.module.css";
 
@@ -17,6 +19,8 @@ type Supply = {
 type Procedure = { id: string; name: string; procedure_supplies: Supply[] };
 type SampleProduct = { id: string; name: string; unit: string };
 type SampleLine = { productId: string; quantity: string };
+type AreaProduct = { id: string; name: string; unit: string; cost_per_unit: number | null };
+type AreaLine = { area: string; productId: string; quantity: string };
 
 const emptySampleLine = (): SampleLine => ({ productId: "", quantity: "" });
 
@@ -24,10 +28,12 @@ export default function LogTreatmentForm({
   staff,
   procedures,
   sampleProducts,
+  areaProducts,
 }: {
   staff: Staff[];
   procedures: Procedure[];
   sampleProducts: SampleProduct[];
+  areaProducts: AreaProduct[];
 }) {
   const [state, formAction, pending] = useActionState(logTreatment, initialState);
   const [procedureId, setProcedureId] = useState("");
@@ -36,6 +42,7 @@ export default function LogTreatmentForm({
   const [unitsBilled, setUnitsBilled] = useState("");
   const [samplesGiven, setSamplesGiven] = useState(false);
   const [sampleLines, setSampleLines] = useState<SampleLine[]>([emptySampleLine()]);
+  const [areaLines, setAreaLines] = useState<AreaLine[]>([]);
 
   const selectedProcedure = procedures.find((p) => p.id === procedureId) || null;
   const dosedLine = selectedProcedure?.procedure_supplies.find((s) => s.is_dosed) || null;
@@ -58,6 +65,7 @@ export default function LogTreatmentForm({
       setUnitsBilled("");
       setSamplesGiven(false);
       setSampleLines([emptySampleLine()]);
+      setAreaLines([]);
     }
   }, [state]);
 
@@ -71,6 +79,31 @@ export default function LogTreatmentForm({
 
   const samplesJson = JSON.stringify(
     sampleLines.map((l) => ({ productId: l.productId, quantity: Number(l.quantity) }))
+  );
+
+  const handleAreaSelect = (area: string) => {
+    setAreaLines((prev) => [...prev, { area, productId: "", quantity: "" }]);
+  };
+
+  const updateAreaLine = (index: number, patch: Partial<AreaLine>) => {
+    setAreaLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+  };
+
+  const removeAreaLine = (index: number) => {
+    setAreaLines((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const activeAreaSlugs = Array.from(new Set(areaLines.map((l) => l.area)));
+
+  const areaTotalCost = areaLines.reduce((sum, l) => {
+    const product = areaProducts.find((p) => p.id === l.productId);
+    const qty = Number(l.quantity);
+    if (!product || !Number.isFinite(qty)) return sum;
+    return sum + qty * (product.cost_per_unit ?? 0);
+  }, 0);
+
+  const areasJson = JSON.stringify(
+    areaLines.map((l) => ({ area: l.area, productId: l.productId, quantity: Number(l.quantity) }))
   );
 
   const treatmentDeductions = state.deductions.filter((d) => !d.isSample);
@@ -92,6 +125,7 @@ export default function LogTreatmentForm({
       <input type="hidden" name="procedureId" value={procedureId} />
       <input type="hidden" name="clinicianId" value={clinicianId} />
       <input type="hidden" name="samplesJson" value={samplesJson} />
+      <input type="hidden" name="areasJson" value={areasJson} />
 
       <label className={authStyles.label} style={{ maxWidth: 280, marginBottom: 24 }}>
         Clinician
@@ -159,8 +193,67 @@ export default function LogTreatmentForm({
         </div>
       )}
 
-      {sampleProducts.length > 0 && (
+      {procedureId && areaProducts.length > 0 && (
         <div className={styles.doseBox} style={{ marginTop: dosedLine ? 16 : 24 }}>
+          <h4>Areas treated</h4>
+          <FaceDiagram activeSlugs={activeAreaSlugs} onSelect={handleAreaSelect} />
+
+          {areaLines.length > 0 && (
+            <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {areaLines.map((line, index) => (
+                <div key={index} className={styles.areaLineRow}>
+                  <div className={authStyles.label} style={{ justifyContent: "center" }}>
+                    {index === 0 ? "Area" : ""}
+                    <div style={{ height: 38, display: "flex", alignItems: "center", fontSize: 13.5 }}>
+                      {faceAreaLabel(line.area)}
+                    </div>
+                  </div>
+                  <label className={authStyles.label}>
+                    {index === 0 ? "Product" : ""}
+                    <select
+                      className={authStyles.field}
+                      value={line.productId}
+                      onChange={(e) => updateAreaLine(index, { productId: e.target.value })}
+                    >
+                      <option value="" disabled>
+                        Select a product
+                      </option>
+                      {areaProducts.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className={authStyles.label}>
+                    {index === 0 ? "Quantity" : ""}
+                    <input
+                      className={authStyles.field}
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={line.quantity}
+                      onChange={(e) => updateAreaLine(index, { quantity: e.target.value })}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => removeAreaLine(index)}
+                    className={styles.removeLineBtn}
+                    aria-label="Remove area line"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <div style={{ fontSize: 13.5, fontWeight: 600 }}>Total cost: ${areaTotalCost.toFixed(2)}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {sampleProducts.length > 0 && (
+        <div className={styles.doseBox} style={{ marginTop: 16 }}>
           <label
             className={authStyles.label}
             style={{ flexDirection: "row", alignItems: "center", gap: 8, textTransform: "none" }}

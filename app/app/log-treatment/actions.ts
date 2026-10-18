@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { FACE_AREAS } from "@/lib/faceAreas";
+
+const VALID_AREAS = new Set(FACE_AREAS.map((a) => a.slug));
 
 export type Deduction = {
   productName: string;
@@ -37,6 +40,7 @@ export async function logTreatment(
   const unitsBilledRaw = String(formData.get("unitsBilled") || "").trim();
   const samplesGiven = formData.get("samplesGiven") === "on";
   const samplesJson = String(formData.get("samplesJson") || "[]");
+  const areasJson = String(formData.get("areasJson") || "[]");
 
   if (!procedureId || !clinicianId) {
     return { ...initial, error: "Select a clinician and treatment above." };
@@ -57,6 +61,16 @@ export async function logTreatment(
       return { ...initial, error: "Add at least one sample product and quantity, or untick Samples given." };
     }
   }
+
+  let areas: { area: string; productId: string; quantity: number }[] = [];
+  try {
+    areas = JSON.parse(areasJson);
+  } catch {
+    return { ...initial, error: "Something went wrong reading the area entries." };
+  }
+  areas = areas.filter(
+    (a) => VALID_AREAS.has(a.area) && a.productId && Number.isFinite(a.quantity) && a.quantity > 0
+  );
 
   const supabase = await createClient();
   const {
@@ -84,6 +98,7 @@ export async function logTreatment(
     p_units_drawn: unitsDrawn,
     p_units_billed: unitsBilled,
     p_samples: samplesGiven ? samples.map((s) => ({ product_id: s.productId, quantity: s.quantity })) : null,
+    p_areas: areas.length ? areas.map((a) => ({ area: a.area, product_id: a.productId, quantity: a.quantity })) : null,
   });
 
   if (error) {

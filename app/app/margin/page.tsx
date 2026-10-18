@@ -12,9 +12,10 @@ export const metadata: Metadata = {
 };
 
 type Product = { cost_per_unit: number | null };
-type Supply = { quantity: number; products: Product | null };
+type Supply = { quantity: number; is_dosed: boolean; products: Product | null };
 type Procedure = { id: string; name: string; price: number | null; procedure_supplies: Supply[] };
 type Log = { id: string; procedure_id: string; created_at: string };
+type AreaRow = { treatment_log_id: string; quantity: number; products: Product | null };
 
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -37,16 +38,17 @@ export default async function MarginPage() {
         id, name,
         procedures (
           id, name, price,
-          procedure_supplies ( quantity, products ( cost_per_unit ) )
+          procedure_supplies ( quantity, is_dosed, products ( cost_per_unit ) )
         ),
-        treatment_logs ( id, procedure_id, created_at )
+        treatment_logs ( id, procedure_id, created_at ),
+        treatment_log_areas ( treatment_log_id, quantity, products ( cost_per_unit ) )
       )`
     )
     .eq("id", user.id)
     .single();
 
   const clinic = profile?.clinics as unknown as
-    | { id: string; name: string; procedures: Procedure[]; treatment_logs: Log[] }
+    | { id: string; name: string; procedures: Procedure[]; treatment_logs: Log[]; treatment_log_areas: AreaRow[] }
     | null;
 
   if (!clinic) {
@@ -56,18 +58,49 @@ export default async function MarginPage() {
   const monthStart = startOfMonth(new Date());
   const logsThisMonth = (clinic.treatment_logs || []).filter((l) => new Date(l.created_at) >= monthStart);
 
+  // Group this month's area entries (from the face-diagram feature) by the
+  // log they belong to, so a log's real area cost can be added to its
+  // procedure's fixed (non-dosed) recipe cost — see the hybrid cost model
+  // below.
+  const areasByLogId = new Map<string, AreaRow[]>();
+  for (const area of clinic.treatment_log_areas || []) {
+    const list = areasByLogId.get(area.treatment_log_id) || [];
+    list.push(area);
+    areasByLogId.set(area.treatment_log_id, list);
+  }
+
   const rows = (clinic.procedures || [])
     .map((proc) => {
-      const count = logsThisMonth.filter((l) => l.procedure_id === proc.id).length;
+      const procLogs = logsThisMonth.filter((l) => l.procedure_id === proc.id);
+      const count = procLogs.length;
       if (count === 0) return null;
-      const cost = proc.procedure_supplies.reduce(
+
+      // Today's existing number: every recipe line (fixed + dosed) at its
+      // fixed quantity — unchanged, used whenever a log has no area entries.
+      const fullRecipeCost = proc.procedure_supplies.reduce(
         (sum, s) => sum + s.quantity * (s.products?.cost_per_unit ?? 0),
         0
       );
+      // Just the fixed (non-dosed) lines — used alongside a log's real area
+      // cost, so the dosed line's recipe default is never double-counted.
+      const fixedRecipeCost = proc.procedure_supplies
+        .filter((s) => !s.is_dosed)
+        .reduce((sum, s) => sum + s.quantity * (s.products?.cost_per_unit ?? 0), 0);
+
+      const totalCost = procLogs.reduce((sum, log) => {
+        const areaRows = areasByLogId.get(log.id);
+        if (areaRows && areaRows.length > 0) {
+          const areaCost = areaRows.reduce((s, a) => s + a.quantity * (a.products?.cost_per_unit ?? 0), 0);
+          return sum + fixedRecipeCost + areaCost;
+        }
+        return sum + fullRecipeCost;
+      }, 0);
+
+      const cost = totalCost / count;
       const price = proc.price ?? 0;
       const margin = price - cost;
       const marginPct = price > 0 ? (margin / price) * 100 : null;
-      const total = margin * count;
+      const total = price * count - totalCost;
       return { name: proc.name, count, cost, price, margin, marginPct, total };
     })
     .filter((r): r is NonNullable<typeof r> => r !== null)

@@ -22,7 +22,7 @@ type Supply = {
   products: { id: string; name: string; unit: string; pack_name: string } | null;
 };
 type Procedure = { id: string; name: string; procedure_supplies: Supply[] };
-type SampleProduct = { id: string; name: string; unit: string; category: string };
+type SampleProduct = { id: string; name: string; unit: string; category: string; cost_per_unit: number | null };
 
 export default async function LogTreatmentPage() {
   const supabase = await createClient();
@@ -44,7 +44,7 @@ export default async function LogTreatmentPage() {
           id, name,
           procedure_supplies ( id, quantity, is_dosed, products ( id, name, unit, pack_name ) )
         ),
-        products ( id, name, unit, category )
+        products ( id, name, unit, category, cost_per_unit )
       )`
     )
     .eq("id", user.id)
@@ -62,6 +62,9 @@ export default async function LogTreatmentPage() {
   const procedures = [...(clinic.procedures || [])].sort((a, b) => a.name.localeCompare(b.name));
   const sampleProducts = (clinic.products || [])
     .filter((p) => p.category === "Sample")
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const areaProducts = (clinic.products || [])
+    .filter((p) => p.category === "Injectable")
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const missingStaff = staff.length === 0;
@@ -126,7 +129,12 @@ export default async function LogTreatmentPage() {
                 )}
               </div>
             ) : (
-              <LogTreatmentForm staff={staff} procedures={procedures} sampleProducts={sampleProducts} />
+              <LogTreatmentForm
+                staff={staff}
+                procedures={procedures}
+                sampleProducts={sampleProducts}
+                areaProducts={areaProducts}
+              />
             )}
           </div>
         </main>
