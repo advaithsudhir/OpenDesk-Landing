@@ -10,7 +10,8 @@ const navItems = [
   { href: "/app/reorder", label: "Reorder", key: "reorder" },
   { href: "/app/procedures", label: "Procedures", key: "procedures" },
   { href: "/app/margin", label: "Treatment margin", key: "margin" },
-  { href: "/app/log-treatment", label: "Log treatment", key: "logTreatment" },
+  { href: "/app/log-treatment", label: "Log a visit", key: "logTreatment" },
+  { href: "/app/treatment-log", label: "Treatment log", key: "treatmentLog" },
   { href: "/app/staff", label: "Staff", key: "staff" },
 ] as const;
 

@@ -195,6 +195,7 @@ export async function logVisit(_prevState: LogVisitState, formData: FormData): P
   revalidatePath("/app");
   revalidatePath("/app/margin");
   revalidatePath("/app/reorder");
+  revalidatePath("/app/treatment-log");
 
   return { error: null, success: true, deductions, variances, totalCost };
 }

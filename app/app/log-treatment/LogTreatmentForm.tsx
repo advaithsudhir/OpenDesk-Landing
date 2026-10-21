@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { logVisit, type LogVisitState } from "./actions";
 import FaceDiagram from "./FaceDiagram";
@@ -513,7 +514,10 @@ export default function LogTreatmentForm({
 
           <div className={styles.done}>
             ✓ Stock updated and written to the audit trail. Oldest batches used first — no patient data
-            recorded.
+            recorded.{" "}
+            <Link href={`/app/treatment-log?month=${visitDate.slice(0, 7)}`} style={{ color: "inherit", fontWeight: 600 }}>
+              View in treatment log →
+            </Link>
           </div>
         </div>
       )}

@@ -50,6 +50,7 @@ type Log = {
   created_at: string;
   staff: { name: string } | null;
   visits: { visit_date: string } | null;
+  procedures: { procedure_supplies: { is_dosed: boolean; products: { name: string; unit: string } | null }[] } | null;
 };
 
 type Supply = { id: string; product_id: string; quantity: number; is_dosed: boolean };
@@ -87,7 +88,10 @@ export default async function AppPage() {
         products ( id, name, unit, default_supplier, cost_per_unit, reorder_level ),
         stock_batches ( id, product_id, batch_number, quantity, unit_cost, expiry_date, created_at ),
         treatment_log_items ( id, product_id, quantity_deducted, created_at ),
-        treatment_logs ( id, clinician_id, units_drawn, units_billed, created_at, staff ( name ), visits ( visit_date ) ),
+        treatment_logs (
+          id, clinician_id, units_drawn, units_billed, created_at, staff ( name ), visits ( visit_date ),
+          procedures ( procedure_supplies ( is_dosed, products ( name, unit ) ) )
+        ),
         procedures ( id, name, procedure_supplies ( id, product_id, quantity, is_dosed ) )
       )`
     )
@@ -272,12 +276,24 @@ export default async function AppPage() {
   // --- Units drawn vs billed by clinician, this month ---
   const monthStart = startOfMonth(now);
   const monthStartKey = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}-01`;
-  const clinicianTotals = new Map<string, { name: string; drawn: number; billed: number }>();
+  // One row per clinician *per product*: units drawn is measured in the
+  // procedure's dosed product, and different products' units are never added.
+  const clinicianTotals = new Map<
+    string,
+    { name: string; product: string; unit: string; drawn: number; billed: number }
+  >();
   for (const log of logs) {
     if (log.units_drawn == null || log.units_billed == null) continue;
     if (log.visits ? log.visits.visit_date < monthStartKey : new Date(log.created_at) < monthStart) continue;
-    const key = log.clinician_id;
-    const existing = clinicianTotals.get(key) || { name: log.staff?.name || "Unknown", drawn: 0, billed: 0 };
+    const dosed = log.procedures?.procedure_supplies.find((s) => s.is_dosed)?.products;
+    const key = `${log.clinician_id}|${dosed?.name ?? ""}`;
+    const existing = clinicianTotals.get(key) || {
+      name: log.staff?.name || "Unknown",
+      product: dosed?.name || "—",
+      unit: dosed?.unit || "units",
+      drawn: 0,
+      billed: 0,
+    };
     existing.drawn += log.units_drawn;
     existing.billed += log.units_billed;
     clinicianTotals.set(key, existing);
@@ -291,6 +307,7 @@ export default async function AppPage() {
     .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
 
   const fmt = (n: number) => `$${n.toLocaleString("en-AU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  const qtyFmt = (n: number, unit: string) => `${n.toLocaleString("en-AU", { maximumFractionDigits: 2 })} ${unit}`;
 
   return (
     <>
@@ -548,21 +565,23 @@ export default async function AppPage() {
                 <thead>
                   <tr>
                     <th>Clinician</th>
-                    <th>Units drawn</th>
-                    <th>Units billed</th>
+                    <th>Product</th>
+                    <th>Drawn</th>
+                    <th>Billed</th>
                     <th>Variance</th>
                     <th>Variance %</th>
                   </tr>
                 </thead>
                 <tbody>
                   {clinicianVariance.map((c) => (
-                    <tr key={c.name}>
+                    <tr key={`${c.name}|${c.product}`}>
                       <td data-label="Clinician" className={styles.prod}>
                         {c.name}
                       </td>
-                      <td data-label="Units drawn">{c.drawn}</td>
-                      <td data-label="Units billed">{c.billed}</td>
-                      <td data-label="Variance">{c.variance}</td>
+                      <td data-label="Product">{c.product}</td>
+                      <td data-label="Drawn">{qtyFmt(c.drawn, c.unit)}</td>
+                      <td data-label="Billed">{qtyFmt(c.billed, c.unit)}</td>
+                      <td data-label="Variance">{qtyFmt(c.variance, c.unit)}</td>
                       <td data-label="Variance %">
                         <span className={`${styles.pill} ${Math.abs(c.pct) >= 4 ? styles.pillAmber : styles.pillGrey}`}>
                           {c.pct.toFixed(1)}%

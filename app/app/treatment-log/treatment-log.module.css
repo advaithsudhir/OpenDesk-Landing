@@ -1,0 +1,236 @@
+.main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px 32px 80px;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e4e1d8;
+  border-radius: 5px;
+  box-shadow: 0 1px 2px rgba(31, 36, 33, 0.04), 0 8px 20px -14px rgba(31, 36, 33, 0.18);
+}
+
+.empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: #6b7268;
+  font-size: 14px;
+}
+
+/* ---------- Month bar ---------- */
+
+.monthBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.monthLink {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #4a6350;
+  text-decoration: none;
+  padding: 8px 12px;
+  border: 1px solid #e4e1d8;
+  border-radius: 5px;
+  background: #fff;
+  white-space: nowrap;
+}
+
+.monthLinkDisabled {
+  visibility: hidden;
+}
+
+.monthName {
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---------- Summary ---------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat {
+  padding: 16px 18px;
+}
+
+.statValue {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: #6b7268;
+  margin-top: 2px;
+}
+
+/* ---------- Visits ---------- */
+
+.visits {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.visit {
+  padding: 18px 20px;
+}
+
+.visitHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.visitDate {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.visitClinician {
+  font-size: 13px;
+  color: #6b7268;
+  margin-left: 10px;
+}
+
+.visitCost {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.line {
+  font-size: 13.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+}
+
+.lineProc {
+  font-weight: 600;
+}
+
+.lineArea {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #4a6350;
+  background: rgba(124, 152, 133, 0.14);
+  border-radius: 99px;
+  padding: 2px 9px;
+}
+
+.lineProduct {
+  color: #3d433e;
+}
+
+.lineMuted {
+  color: #9aa198;
+}
+
+.samples {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6b7268;
+}
+
+.details {
+  margin-top: 12px;
+  border-top: 1px solid #ece8de;
+  padding-top: 10px;
+}
+
+.details summary {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #4a6350;
+  cursor: pointer;
+}
+
+.deductRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #f1eee6;
+  font-variant-numeric: tabular-nums;
+}
+
+.deductRow:last-child {
+  border-bottom: none;
+}
+
+.deductMeta {
+  font-size: 11.5px;
+  color: #9aa198;
+}
+
+.deductQty {
+  color: #b5563e;
+  font-weight: 600;
+  text-align: right;
+}
+
+.deductCost {
+  color: #6b7268;
+  text-align: right;
+  min-width: 64px;
+}
+
+/* ---------- Phone ---------- */
+
+@media (max-width: 720px) {
+  .main {
+    padding: 28px 16px 64px;
+  }
+
+  .stats {
+    gap: 8px;
+  }
+
+  .stat {
+    padding: 12px;
+  }
+
+  .statValue {
+    font-size: 17px;
+  }
+
+  .visit {
+    padding: 14px 16px;
+  }
+
+  .visitClinician {
+    display: block;
+    margin-left: 0;
+  }
+
+  .monthLink {
+    padding: 7px 9px;
+    font-size: 12.5px;
+  }
+}
