@@ -1,3 +1,9 @@
+.main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px 32px 80px;
+}
+
 .panel {
   background: #fff;
   border: 1px solid #e4e1d8;
@@ -13,46 +19,193 @@
   font-size: 14px;
 }
 
-.rgrid {
+/* ---------- Visit header ---------- */
+
+.visitTop {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: minmax(0, 280px) minmax(0, 200px);
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.rcard {
-  text-align: left;
-  background: #fff;
-  border: 1px solid #e4e1d8;
-  border-radius: 5px;
-  padding: 16px 18px;
+/* ---------- Face diagram + lines ---------- */
+
+.visitLayout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.faceWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: sticky;
+  top: 16px;
+}
+
+.faceSvg {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  display: block;
+  touch-action: manipulation;
+}
+
+.faceZone {
+  fill: rgba(124, 152, 133, 0.12);
+  stroke: rgba(74, 99, 80, 0.45);
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
   cursor: pointer;
+  transition: fill 0.15s ease;
+  outline: none;
+}
+
+.faceZone:hover,
+.faceZone:focus-visible {
+  fill: rgba(124, 152, 133, 0.35);
+  stroke: #4a6350;
+}
+
+.faceZoneActive {
+  fill: rgba(124, 152, 133, 0.55);
+  stroke: #4a6350;
+  stroke-width: 1.5;
+  stroke-dasharray: none;
+}
+
+.faceZoneActive:hover,
+.faceZoneActive:focus-visible {
+  fill: rgba(124, 152, 133, 0.7);
+}
+
+.faceSide {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #9aa198;
   font-family: "Public Sans", system-ui, sans-serif;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
-.rcard h3 {
-  margin: 0 0 4px;
-  font-size: 14.5px;
+.faceCaption {
+  font-size: 13px;
   font-weight: 600;
-  color: #1f2421;
+  color: #4a6350;
+  min-height: 18px;
+  text-align: center;
 }
 
-.rcard .count {
+.faceNote {
+  font-size: 11.5px;
+  color: #9aa198;
+}
+
+.sectionLabel {
   font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7268;
+  margin-bottom: 10px;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lineRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.3fr) 110px 36px;
+  gap: 10px;
+  align-items: end;
+}
+
+.lineHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.3fr) 110px 36px;
+  gap: 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: #6b7268;
 }
 
-.selected {
-  border-color: #7c9885;
-  background: rgba(124, 152, 133, 0.1);
+.lineRow select,
+.lineRow input,
+.sampleLineRow select,
+.sampleLineRow input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
+
+.fieldLabel {
+  display: none;
+}
+
+.amountWrap {
+  position: relative;
+}
+
+.unitHint {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #9aa198;
+  pointer-events: none;
+}
+
+.addLineBtn {
+  background: none;
+  border: 1px dashed #c9c4b6;
+  border-radius: 5px;
+  padding: 9px 14px;
+  font-size: 13px;
+  color: #4a6350;
+  cursor: pointer;
+  font-family: "Public Sans", system-ui, sans-serif;
+  align-self: flex-start;
+}
+
+.removeLineBtn {
+  height: 42px;
+  border: 1px solid #e4e1d8;
+  border-radius: 5px;
+  background: #fff;
+  color: #6b7268;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.removeLineBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.emptyLines {
+  font-size: 13.5px;
+  color: #6b7268;
+  padding: 14px 16px;
+  border: 1px dashed #e4e1d8;
+  border-radius: 5px;
+}
+
+/* ---------- Per-procedure summary, samples, total ---------- */
 
 .doseBox {
   background: #fbf8f3;
   border: 1px solid #e4e1d8;
   border-radius: 5px;
-  padding: 18px 20px;
-  margin-top: 20px;
+  padding: 16px 18px;
+  margin-top: 18px;
 }
 
 .doseBox h4 {
@@ -63,11 +216,68 @@
   color: #6b7268;
 }
 
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+  border-bottom: 1px solid #ece8de;
+  font-size: 13.5px;
+}
+
+.summaryRow:last-child {
+  border-bottom: none;
+}
+
+.summaryMeta {
+  font-size: 12px;
+  color: #6b7268;
+  margin-top: 2px;
+}
+
+.billedInput {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #6b7268;
+}
+
+.billedInput input {
+  width: 90px;
+}
+
+.sampleLineRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 36px;
+  gap: 10px;
+  align-items: end;
+}
+
+.totalBar {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 18px;
+  border-top: 1px solid #e4e1d8;
+}
+
+.totalAmount {
+  font-size: 15px;
+  font-weight: 700;
+}
+
 .hint {
   font-size: 13px;
   color: #6b7268;
-  margin-top: 12px;
 }
+
+/* ---------- Result ---------- */
 
 .deductBox {
   margin-top: 24px;
@@ -104,14 +314,25 @@
   margin-top: 2px;
 }
 
+.subLabel {
+  margin: 20px 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7268;
+}
+
+.subLabel:first-of-type {
+  margin-top: 0;
+}
+
 .pill {
   display: inline-block;
   font-size: 11px;
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 99px;
-  white-space: nowrap;
-  margin-top: 14px;
+  margin: 10px 8px 0 0;
 }
 
 .pillGreen {
@@ -130,55 +351,78 @@
   color: #4a6350;
 }
 
-.sampleLineRow {
-  display: grid;
-  grid-template-columns: 1fr 140px 32px;
-  gap: 12px;
-  align-items: end;
-}
+/* ---------- Phone ---------- */
 
-.areaLineRow {
-  display: grid;
-  grid-template-columns: 150px 1fr 120px 32px;
-  gap: 12px;
-  align-items: end;
-}
+@media (max-width: 760px) {
+  .main {
+    padding: 28px 16px 64px;
+  }
 
-.addLineBtn {
-  background: none;
-  border: 1px dashed #c9c4b6;
-  border-radius: 5px;
-  padding: 8px 14px;
-  font-size: 13px;
-  color: #4a6350;
-  cursor: pointer;
-  font-family: "Public Sans", system-ui, sans-serif;
-}
+  .visitTop {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
 
-.removeLineBtn {
-  height: 42px;
-  border: 1px solid #e4e1d8;
-  border-radius: 5px;
-  background: #fff;
-  color: #6b7268;
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-}
+  .visitLayout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
 
-.removeLineBtn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+  .faceWrap {
+    position: static;
+  }
 
-.subLabel {
-  margin: 20px 0 8px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #6b7268;
-}
+  .faceSvg {
+    max-width: 260px;
+  }
 
-.subLabel:first-of-type {
-  margin-top: 0;
+  .lineHeader {
+    display: none;
+  }
+
+  .lineRow {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 12px;
+    border: 1px solid #e4e1d8;
+    border-radius: 5px;
+    background: #fdfcf9;
+  }
+
+  /* Procedure, then product, full width; area and amount side by side. */
+  .lineRow > :nth-child(1) {
+    grid-column: 1 / -1;
+    order: 1;
+  }
+
+  .lineRow > :nth-child(3) {
+    grid-column: 1 / -1;
+    order: 2;
+  }
+
+  .lineRow > :nth-child(2) {
+    order: 3;
+  }
+
+  .lineRow > :nth-child(4) {
+    order: 4;
+  }
+
+  .lineRow > :nth-child(5) {
+    order: 5;
+  }
+
+  .fieldLabel {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6b7268;
+    margin-bottom: 4px;
+  }
+
+  .removeLineBtn {
+    grid-column: 1 / -1;
+    height: 34px;
+    font-size: 13px;
+  }
 }

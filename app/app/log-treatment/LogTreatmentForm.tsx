@@ -1,287 +1,395 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { logTreatment, type LogTreatmentState } from "./actions";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { logVisit, type LogVisitState } from "./actions";
 import FaceDiagram from "./FaceDiagram";
-import { faceAreaLabel } from "@/lib/faceAreas";
+import { FACE_AREAS } from "@/lib/faceAreas";
 import authStyles from "../../auth.module.css";
 import styles from "./log.module.css";
 
-const initialState: LogTreatmentState = { error: null, success: false, deductions: [], variance: null };
+const initialState: LogVisitState = { error: null, success: false, deductions: [], variances: [], totalCost: null };
 
 type Staff = { id: string; name: string };
-type Supply = {
+type Supply = { quantity: number; is_dosed: boolean; products: { id: string; cost_per_unit: number | null } | null };
+export type FormProcedure = { id: string; name: string; procedure_supplies: Supply[] };
+export type FormProduct = {
   id: string;
-  quantity: number;
-  is_dosed: boolean;
-  products: { id: string; name: string; unit: string; pack_name: string } | null;
+  name: string;
+  brand: string | null;
+  unit: string;
+  category: string;
+  cost_per_unit: number | null;
 };
-type Procedure = { id: string; name: string; procedure_supplies: Supply[] };
-type SampleProduct = { id: string; name: string; unit: string };
+
+type Line = { key: number; procedureId: string; area: string; productId: string; quantity: string };
 type SampleLine = { productId: string; quantity: string };
-type AreaProduct = { id: string; name: string; unit: string; cost_per_unit: number | null };
-type AreaLine = { area: string; productId: string; quantity: string };
 
 const emptySampleLine = (): SampleLine => ({ productId: "", quantity: "" });
+const money = (n: number) => `$${n.toFixed(2)}`;
+
+function localToday() {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function dosedProductId(proc: FormProcedure | undefined) {
+  return proc?.procedure_supplies.find((s) => s.is_dosed)?.products?.id || "";
+}
 
 export default function LogTreatmentForm({
   staff,
   procedures,
-  sampleProducts,
-  areaProducts,
+  products,
 }: {
   staff: Staff[];
-  procedures: Procedure[];
-  sampleProducts: SampleProduct[];
-  areaProducts: AreaProduct[];
+  procedures: FormProcedure[];
+  products: FormProduct[];
 }) {
-  const [state, formAction, pending] = useActionState(logTreatment, initialState);
-  const [procedureId, setProcedureId] = useState("");
+  const [state, formAction, pending] = useActionState(logVisit, initialState);
   const [clinicianId, setClinicianId] = useState("");
-  const [unitsDrawn, setUnitsDrawn] = useState("");
-  const [unitsBilled, setUnitsBilled] = useState("");
+  const [visitDate, setVisitDate] = useState("");
+  const [today, setToday] = useState("");
+  const [lines, setLines] = useState<Line[]>([]);
+  const [billedEdits, setBilledEdits] = useState<Record<string, string>>({});
   const [samplesGiven, setSamplesGiven] = useState(false);
   const [sampleLines, setSampleLines] = useState<SampleLine[]>([emptySampleLine()]);
-  const [areaLines, setAreaLines] = useState<AreaLine[]>([]);
+  const nextKey = useRef(1);
 
-  const selectedProcedure = procedures.find((p) => p.id === procedureId) || null;
-  const dosedLine = selectedProcedure?.procedure_supplies.find((s) => s.is_dosed) || null;
-
+  // The clinic's local date, set after mount so server and client render agree.
   useEffect(() => {
-    if (dosedLine) {
-      setUnitsDrawn(String(dosedLine.quantity));
-      setUnitsBilled(String(dosedLine.quantity));
-    } else {
-      setUnitsDrawn("");
-      setUnitsBilled("");
-    }
-  }, [procedureId]); // eslint-disable-line react-hooks/exhaustive-deps
+    const t = localToday();
+    setToday(t);
+    setVisitDate((d) => d || t);
+  }, []);
 
   useEffect(() => {
     if (state.success) {
-      setProcedureId("");
       setClinicianId("");
-      setUnitsDrawn("");
-      setUnitsBilled("");
+      setLines([]);
+      setBilledEdits({});
       setSamplesGiven(false);
       setSampleLines([emptySampleLine()]);
-      setAreaLines([]);
     }
   }, [state]);
 
-  const updateSampleLine = (index: number, patch: Partial<SampleLine>) => {
-    setSampleLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+  const procById = new Map(procedures.map((p) => [p.id, p]));
+  const productById = new Map(products.map((p) => [p.id, p]));
+  const lineProducts = products.filter((p) => p.category !== "Sample");
+  const sampleProducts = products.filter((p) => p.category === "Sample");
+  const categories = [...new Set(lineProducts.map((p) => p.category))];
+
+  // ---------- Lines ----------
+
+  const addLine = (area = "") => {
+    // A new line copies the previous line's procedure and product: the usual
+    // case is the same treatment carried on into another area.
+    setLines((prev) => {
+      const last = prev[prev.length - 1];
+      return [
+        ...prev,
+        {
+          key: nextKey.current++,
+          procedureId: last?.procedureId || "",
+          productId: last?.productId || "",
+          area,
+          quantity: "",
+        },
+      ];
+    });
   };
 
-  const removeSampleLine = (index: number) => {
-    setSampleLines((prev) => prev.filter((_, i) => i !== index));
+  const updateLine = (key: number, patch: Partial<Line>) => {
+    setLines((prev) =>
+      prev.map((line) => {
+        if (line.key !== key) return line;
+        const next = { ...line, ...patch };
+        if (patch.procedureId !== undefined && patch.procedureId !== line.procedureId) {
+          const oldDosed = dosedProductId(procById.get(line.procedureId));
+          if (!line.productId || line.productId === oldDosed) {
+            next.productId = dosedProductId(procById.get(patch.procedureId));
+          }
+        }
+        if (!next.productId) next.quantity = "";
+        return next;
+      })
+    );
   };
 
+  const removeLine = (key: number) => setLines((prev) => prev.filter((l) => l.key !== key));
+
+  const filledLines = lines.filter((l) => l.procedureId || l.productId || l.quantity.trim());
+  const activeAreaSlugs = [...new Set(lines.map((l) => l.area).filter(Boolean))];
+  const qty = (l: Line) => {
+    const n = Number(l.quantity);
+    return l.productId && l.quantity.trim() && Number.isFinite(n) && n > 0 ? n : 0;
+  };
+
+  // ---------- Per-procedure summary (mirrors log_visit's rules) ----------
+
+  const procedureIdsInVisit = [...new Set(filledLines.map((l) => l.procedureId).filter(Boolean))];
+  const summaries = procedureIdsInVisit
+    .map((id) => {
+      const proc = procById.get(id);
+      if (!proc) return null;
+      const procLines = filledLines.filter((l) => l.procedureId === id);
+      const productLines = procLines.filter((l) => l.productId);
+      const hasProductLines = productLines.length > 0;
+      const dosedSupply = proc.procedure_supplies.find((s) => s.is_dosed);
+      const dosedId = dosedSupply?.products?.id || "";
+
+      let drawn: number | null = null;
+      if (dosedId) {
+        if (hasProductLines) {
+          const matching = productLines.filter((l) => l.productId === dosedId);
+          drawn = matching.length ? matching.reduce((s, l) => s + qty(l), 0) : null;
+        } else {
+          drawn = dosedSupply!.quantity;
+        }
+      }
+
+      const recipeCost = proc.procedure_supplies
+        .filter((s) => !(s.is_dosed && hasProductLines))
+        .reduce((s, sup) => s + sup.quantity * (sup.products?.cost_per_unit ?? 0), 0);
+
+      const areas = new Set(procLines.map((l) => l.area).filter(Boolean)).size;
+      return { proc, drawn, recipeCost, areas, lineCount: procLines.length, dosedUnit: productById.get(dosedId)?.unit };
+    })
+    .filter((s): s is NonNullable<typeof s> => s !== null);
+
+  const billedFor = (procId: string, drawn: number | null) =>
+    billedEdits[procId] ?? (drawn != null ? String(drawn) : "");
+
+  const visitTotal =
+    summaries.reduce((s, x) => s + x.recipeCost, 0) +
+    filledLines.reduce((s, l) => s + qty(l) * (productById.get(l.productId)?.cost_per_unit ?? 0), 0);
+
+  // ---------- Serialised payloads ----------
+
+  const linesJson = JSON.stringify(
+    lines.map((l) => ({ procedureId: l.procedureId, productId: l.productId, area: l.area, quantity: l.quantity }))
+  );
+  const billedJson = JSON.stringify(
+    summaries
+      .filter((s) => s.drawn != null)
+      .map((s) => ({ procedureId: s.proc.id, unitsBilled: billedFor(s.proc.id, s.drawn) }))
+  );
   const samplesJson = JSON.stringify(
     sampleLines.map((l) => ({ productId: l.productId, quantity: Number(l.quantity) }))
   );
 
-  const handleAreaSelect = (area: string) => {
-    setAreaLines((prev) => [...prev, { area, productId: "", quantity: "" }]);
-  };
-
-  const updateAreaLine = (index: number, patch: Partial<AreaLine>) => {
-    setAreaLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)));
-  };
-
-  const removeAreaLine = (index: number) => {
-    setAreaLines((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const activeAreaSlugs = Array.from(new Set(areaLines.map((l) => l.area)));
-
-  const areaTotalCost = areaLines.reduce((sum, l) => {
-    const product = areaProducts.find((p) => p.id === l.productId);
-    const qty = Number(l.quantity);
-    if (!product || !Number.isFinite(qty)) return sum;
-    return sum + qty * (product.cost_per_unit ?? 0);
-  }, 0);
-
-  const areasJson = JSON.stringify(
-    areaLines.map((l) => ({ area: l.area, productId: l.productId, quantity: Number(l.quantity) }))
-  );
-
   const treatmentDeductions = state.deductions.filter((d) => !d.isSample);
   const sampleDeductions = state.deductions.filter((d) => d.isSample);
-
-  const clinicianName = staff.find((s) => s.id === clinicianId)?.name;
-
-  let hint = "Select a clinician and treatment above";
-  if (selectedProcedure && clinicianName) {
-    hint = `${selectedProcedure.name} · ${clinicianName}`;
-  } else if (selectedProcedure) {
-    hint = `${selectedProcedure.name} selected — choose a clinician`;
-  } else if (clinicianName) {
-    hint = `${clinicianName} selected — choose a treatment`;
-  }
+  const canSubmit = clinicianId && visitDate && filledLines.length > 0 && !pending;
 
   return (
     <form action={formAction}>
-      <input type="hidden" name="procedureId" value={procedureId} />
       <input type="hidden" name="clinicianId" value={clinicianId} />
+      <input type="hidden" name="linesJson" value={linesJson} />
+      <input type="hidden" name="billedJson" value={billedJson} />
       <input type="hidden" name="samplesJson" value={samplesJson} />
-      <input type="hidden" name="areasJson" value={areasJson} />
 
-      <label className={authStyles.label} style={{ maxWidth: 280, marginBottom: 24 }}>
-        Clinician
-        <select
-          className={authStyles.field}
-          value={clinicianId}
-          onChange={(e) => setClinicianId(e.target.value)}
-        >
-          <option value="">Select clinician</option>
-          {staff.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className={authStyles.label} style={{ marginBottom: 12 }}>
-        Which treatment?
-      </div>
-      <div className={styles.rgrid}>
-        {procedures.map((proc) => (
-          <button
-            key={proc.id}
-            type="button"
-            onClick={() => setProcedureId(proc.id)}
-            className={`${styles.rcard} ${procedureId === proc.id ? styles.selected : ""}`}
-          >
-            <h3>{proc.name}</h3>
-            <div className={styles.count}>{proc.procedure_supplies.length} consumables</div>
-          </button>
-        ))}
+      <div className={styles.visitTop}>
+        <label className={authStyles.label}>
+          Clinician
+          <select className={authStyles.field} value={clinicianId} onChange={(e) => setClinicianId(e.target.value)}>
+            <option value="">Select clinician</option>
+            {staff.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={authStyles.label}>
+          Visit date
+          <input
+            className={authStyles.field}
+            type="date"
+            name="visitDate"
+            value={visitDate}
+            max={today || undefined}
+            onChange={(e) => setVisitDate(e.target.value)}
+          />
+        </label>
       </div>
 
-      {dosedLine && (
-        <div className={styles.doseBox}>
-          <h4>Dosing — {dosedLine.products?.name}</h4>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
-            <label className={authStyles.label}>
-              Units drawn from{" "}
-              {dosedLine.products?.pack_name && dosedLine.products.pack_name.toLowerCase() !== "unit"
-                ? dosedLine.products.pack_name.toLowerCase()
-                : "vial"}
-              <input
-                className={authStyles.field}
-                type="number"
-                name="unitsDrawn"
-                min={0}
-                value={unitsDrawn}
-                onChange={(e) => setUnitsDrawn(e.target.value)}
-              />
-            </label>
-            <label className={authStyles.label}>
-              Units billed to patient
-              <input
-                className={authStyles.field}
-                type="number"
-                name="unitsBilled"
-                min={0}
-                value={unitsBilled}
-                onChange={(e) => setUnitsBilled(e.target.value)}
-              />
-            </label>
+      <div className={styles.visitLayout}>
+        <FaceDiagram activeSlugs={activeAreaSlugs} onSelect={(slug) => addLine(slug)} />
+
+        <div>
+          <div className={styles.sectionLabel}>Lines</div>
+          <div className={styles.lines}>
+            {lines.length === 0 ? (
+              <div className={styles.emptyLines}>
+                Tap an area on the face to add a line for it, or add a line without an area.
+              </div>
+            ) : (
+              <>
+                <div className={styles.lineHeader} aria-hidden="true">
+                  <span>Procedure</span>
+                  <span>Area</span>
+                  <span>Product</span>
+                  <span>Amount</span>
+                  <span />
+                </div>
+                {lines.map((line, i) => {
+                  const unit = productById.get(line.productId)?.unit;
+                  return (
+                    <div key={line.key} className={styles.lineRow}>
+                      <div>
+                        <span className={styles.fieldLabel}>Procedure</span>
+                        <select
+                          className={authStyles.field}
+                          aria-label={`Line ${i + 1} procedure`}
+                          value={line.procedureId}
+                          onChange={(e) => updateLine(line.key, { procedureId: e.target.value })}
+                        >
+                          <option value="">No procedure</option>
+                          {procedures.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <span className={styles.fieldLabel}>Area</span>
+                        <select
+                          className={authStyles.field}
+                          aria-label={`Line ${i + 1} area`}
+                          value={line.area}
+                          onChange={(e) => updateLine(line.key, { area: e.target.value })}
+                        >
+                          <option value="">No area</option>
+                          {FACE_AREAS.map((a) => (
+                            <option key={a.slug} value={a.slug}>
+                              {a.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <span className={styles.fieldLabel}>Product</span>
+                        <select
+                          className={authStyles.field}
+                          aria-label={`Line ${i + 1} product`}
+                          value={line.productId}
+                          onChange={(e) => updateLine(line.key, { productId: e.target.value })}
+                        >
+                          <option value="">{line.procedureId ? "Recipe only" : "Select a product"}</option>
+                          {categories.map((cat) => (
+                            <optgroup key={cat} label={cat}>
+                              {lineProducts
+                                .filter((p) => p.category === cat)
+                                .map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.brand ? `${p.name} (${p.brand})` : p.name}
+                                  </option>
+                                ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <span className={styles.fieldLabel}>Amount</span>
+                        <div className={styles.amountWrap}>
+                          <input
+                            className={authStyles.field}
+                            aria-label={`Line ${i + 1} amount`}
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            inputMode="decimal"
+                            value={line.quantity}
+                            disabled={!line.productId}
+                            onChange={(e) => updateLine(line.key, { quantity: e.target.value })}
+                            style={{ paddingRight: unit ? 44 : undefined, width: "100%" }}
+                          />
+                          {unit && <span className={styles.unitHint}>{unit}</span>}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.removeLineBtn}
+                        onClick={() => removeLine(line.key)}
+                        aria-label={`Remove line ${i + 1}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+            <button type="button" className={styles.addLineBtn} onClick={() => addLine()}>
+              + Add line
+            </button>
           </div>
-        </div>
-      )}
 
-      {procedureId && areaProducts.length > 0 && (
-        <div className={styles.doseBox} style={{ marginTop: dosedLine ? 16 : 24 }}>
-          <h4>Areas treated</h4>
-          <FaceDiagram activeSlugs={activeAreaSlugs} onSelect={handleAreaSelect} />
-
-          {areaLines.length > 0 && (
-            <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-              {areaLines.map((line, index) => (
-                <div key={index} className={styles.areaLineRow}>
-                  <div className={authStyles.label} style={{ justifyContent: "center" }}>
-                    {index === 0 ? "Area" : ""}
-                    <div style={{ height: 38, display: "flex", alignItems: "center", fontSize: 13.5 }}>
-                      {faceAreaLabel(line.area)}
+          {summaries.length > 0 && (
+            <div className={styles.doseBox}>
+              <h4>Procedures in this visit</h4>
+              {summaries.map((s) => (
+                <div key={s.proc.id} className={styles.summaryRow}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{s.proc.name}</div>
+                    <div className={styles.summaryMeta}>
+                      {s.drawn != null ? `${s.drawn} ${s.dosedUnit || "units"} drawn` : "Recipe consumables"}
+                      {s.areas > 0 && ` across ${s.areas} area${s.areas === 1 ? "" : "s"}`}
                     </div>
                   </div>
-                  <label className={authStyles.label}>
-                    {index === 0 ? "Product" : ""}
-                    <select
-                      className={authStyles.field}
-                      value={line.productId}
-                      onChange={(e) => updateAreaLine(index, { productId: e.target.value })}
-                    >
-                      <option value="" disabled>
-                        Select a product
-                      </option>
-                      {areaProducts.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className={authStyles.label}>
-                    {index === 0 ? "Quantity" : ""}
-                    <input
-                      className={authStyles.field}
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={line.quantity}
-                      onChange={(e) => updateAreaLine(index, { quantity: e.target.value })}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => removeAreaLine(index)}
-                    className={styles.removeLineBtn}
-                    aria-label="Remove area line"
-                  >
-                    ×
-                  </button>
+                  {s.drawn != null && (
+                    <label className={styles.billedInput}>
+                      Billed ({s.dosedUnit || "units"})
+                      <input
+                        className={authStyles.field}
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        inputMode="decimal"
+                        value={billedFor(s.proc.id, s.drawn)}
+                        onChange={(e) => setBilledEdits((prev) => ({ ...prev, [s.proc.id]: e.target.value }))}
+                      />
+                    </label>
+                  )}
                 </div>
               ))}
-              <div style={{ fontSize: 13.5, fontWeight: 600 }}>Total cost: ${areaTotalCost.toFixed(2)}</div>
             </div>
           )}
-        </div>
-      )}
 
-      {sampleProducts.length > 0 && (
-        <div className={styles.doseBox} style={{ marginTop: 16 }}>
-          <label
-            className={authStyles.label}
-            style={{ flexDirection: "row", alignItems: "center", gap: 8, textTransform: "none" }}
-          >
-            <input
-              type="checkbox"
-              name="samplesGiven"
-              checked={samplesGiven}
-              onChange={(e) => setSamplesGiven(e.target.checked)}
-              style={{ width: 16, height: 16 }}
-            />
-            Samples given
-          </label>
+          {sampleProducts.length > 0 && (
+            <div className={styles.doseBox}>
+              <label
+                className={authStyles.label}
+                style={{ flexDirection: "row", alignItems: "center", gap: 8, textTransform: "none" }}
+              >
+                <input
+                  type="checkbox"
+                  name="samplesGiven"
+                  checked={samplesGiven}
+                  onChange={(e) => setSamplesGiven(e.target.checked)}
+                  style={{ width: 16, height: 16 }}
+                />
+                Samples given
+              </label>
 
-          {samplesGiven && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {sampleLines.map((line, index) => (
-                  <div key={index} className={styles.sampleLineRow}>
-                    <label className={authStyles.label}>
-                      {index === 0 ? "Sample product" : ""}
+              {samplesGiven && (
+                <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+                  {sampleLines.map((line, index) => (
+                    <div key={index} className={styles.sampleLineRow}>
                       <select
                         className={authStyles.field}
+                        aria-label={`Sample ${index + 1} product`}
                         value={line.productId}
-                        onChange={(e) => updateSampleLine(index, { productId: e.target.value })}
+                        onChange={(e) =>
+                          setSampleLines((prev) =>
+                            prev.map((l, i) => (i === index ? { ...l, productId: e.target.value } : l))
+                          )
+                        }
                       >
                         <option value="" disabled>
-                          Select a product
+                          Select a sample
                         </option>
                         {sampleProducts.map((p) => (
                           <option key={p.id} value={p.id}>
@@ -289,52 +397,54 @@ export default function LogTreatmentForm({
                           </option>
                         ))}
                       </select>
-                    </label>
-                    <label className={authStyles.label}>
-                      {index === 0 ? "Quantity" : ""}
                       <input
                         className={authStyles.field}
+                        aria-label={`Sample ${index + 1} quantity`}
                         type="number"
                         min={0}
                         step="0.01"
                         value={line.quantity}
-                        onChange={(e) => updateSampleLine(index, { quantity: e.target.value })}
+                        onChange={(e) =>
+                          setSampleLines((prev) =>
+                            prev.map((l, i) => (i === index ? { ...l, quantity: e.target.value } : l))
+                          )
+                        }
                       />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => removeSampleLine(index)}
-                      className={styles.removeLineBtn}
-                      disabled={sampleLines.length === 1}
-                      aria-label="Remove sample line"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => setSampleLines((prev) => [...prev, emptySampleLine()])}
-                className={styles.addLineBtn}
-                style={{ marginTop: 12 }}
-              >
-                + Add sample line
-              </button>
+                      <button
+                        type="button"
+                        onClick={() => setSampleLines((prev) => prev.filter((_, i) => i !== index))}
+                        className={styles.removeLineBtn}
+                        disabled={sampleLines.length === 1}
+                        aria-label="Remove sample line"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setSampleLines((prev) => [...prev, emptySampleLine()])}
+                    className={styles.addLineBtn}
+                  >
+                    + Add sample line
+                  </button>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      <div style={{ marginTop: 24, display: "flex", alignItems: "center", gap: 16 }}>
-        <button
-          className={authStyles.btn}
-          type="submit"
-          disabled={!procedureId || !clinicianId || pending}
-        >
-          {pending ? "Deducting…" : "Confirm and deduct stock"}
-        </button>
-        <span className={styles.hint}>{hint}</span>
+          <div className={styles.totalBar}>
+            <div>
+              <div className={styles.hint}>Visit total cost</div>
+              <div className={styles.totalAmount} data-testid="visit-total">
+                {money(visitTotal)}
+              </div>
+            </div>
+            <button className={authStyles.btn} type="submit" disabled={!canSubmit}>
+              {pending ? "Deducting…" : "Confirm visit and deduct stock"}
+            </button>
+          </div>
+        </div>
       </div>
 
       {state.error && (
@@ -345,7 +455,7 @@ export default function LogTreatmentForm({
 
       {state.success && (
         <div className={`${styles.panel} ${styles.deductBox}`}>
-          <h3>Deducted automatically</h3>
+          <h3>Visit logged — deducted automatically</h3>
 
           {treatmentDeductions.length > 0 && (
             <>
@@ -381,19 +491,29 @@ export default function LogTreatmentForm({
             </>
           )}
 
-          {state.variance && (
-            <span className={`${styles.pill} ${state.variance.status === "matched" ? styles.pillGreen : styles.pillAmber}`}>
-              {state.variance.status === "matched"
-                ? `${state.variance.drawn} units drawn, ${state.variance.billed} billed — matched, no variance`
-                : state.variance.status === "drawn_over"
-                  ? `${state.variance.drawn - state.variance.billed} unit(s) drawn but not billed`
-                  : `${state.variance.billed - state.variance.drawn} more unit(s) billed than drawn — check entry`}
-            </span>
+          {state.totalCost != null && (
+            <div style={{ marginTop: 12, fontWeight: 700 }} data-testid="visit-total-confirmed">
+              Visit total cost: {money(state.totalCost)}
+            </div>
           )}
 
+          {state.variances.map((v) => (
+            <span
+              key={v.procedureName}
+              className={`${styles.pill} ${v.status === "matched" ? styles.pillGreen : styles.pillAmber}`}
+            >
+              {v.procedureName}:{" "}
+              {v.status === "matched"
+                ? `${v.drawn} drawn, ${v.billed} billed — matched`
+                : v.status === "drawn_over"
+                  ? `${v.drawn - v.billed} drawn but not billed`
+                  : `${v.billed - v.drawn} more billed than drawn — check entry`}
+            </span>
+          ))}
+
           <div className={styles.done}>
-            ✓ Stock updated and written to the audit trail. Oldest batches used first — no patient
-            data recorded.
+            ✓ Stock updated and written to the audit trail. Oldest batches used first — no patient data
+            recorded.
           </div>
         </div>
       )}

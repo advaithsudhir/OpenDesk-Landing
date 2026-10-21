@@ -49,6 +49,7 @@ type Log = {
   units_billed: number | null;
   created_at: string;
   staff: { name: string } | null;
+  visits: { visit_date: string } | null;
 };
 
 type Supply = { id: string; product_id: string; quantity: number; is_dosed: boolean };
@@ -86,7 +87,7 @@ export default async function AppPage() {
         products ( id, name, unit, default_supplier, cost_per_unit, reorder_level ),
         stock_batches ( id, product_id, batch_number, quantity, unit_cost, expiry_date, created_at ),
         treatment_log_items ( id, product_id, quantity_deducted, created_at ),
-        treatment_logs ( id, clinician_id, units_drawn, units_billed, created_at, staff ( name ) ),
+        treatment_logs ( id, clinician_id, units_drawn, units_billed, created_at, staff ( name ), visits ( visit_date ) ),
         procedures ( id, name, procedure_supplies ( id, product_id, quantity, is_dosed ) )
       )`
     )
@@ -270,10 +271,11 @@ export default async function AppPage() {
 
   // --- Units drawn vs billed by clinician, this month ---
   const monthStart = startOfMonth(now);
+  const monthStartKey = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}-01`;
   const clinicianTotals = new Map<string, { name: string; drawn: number; billed: number }>();
   for (const log of logs) {
     if (log.units_drawn == null || log.units_billed == null) continue;
-    if (new Date(log.created_at) < monthStart) continue;
+    if (log.visits ? log.visits.visit_date < monthStartKey : new Date(log.created_at) < monthStart) continue;
     const key = log.clinician_id;
     const existing = clinicianTotals.get(key) || { name: log.staff?.name || "Unknown", drawn: 0, billed: 0 };
     existing.drawn += log.units_drawn;

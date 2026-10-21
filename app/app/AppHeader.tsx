@@ -49,7 +49,7 @@ export default function AppHeader({
             {clinicName}
           </span>
         </div>
-        <nav style={{ display: "flex", gap: 4 }}>
+        <nav style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
           {navItems.map((item) => (
             <Link
               key={item.key}

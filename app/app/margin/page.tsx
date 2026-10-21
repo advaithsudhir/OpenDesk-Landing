@@ -14,11 +14,21 @@ export const metadata: Metadata = {
 type Product = { cost_per_unit: number | null };
 type Supply = { quantity: number; is_dosed: boolean; products: Product | null };
 type Procedure = { id: string; name: string; price: number | null; procedure_supplies: Supply[] };
-type Log = { id: string; procedure_id: string; created_at: string };
-type AreaRow = { treatment_log_id: string; quantity: number; products: Product | null };
+type Log = {
+  id: string;
+  procedure_id: string;
+  visit_id: string | null;
+  created_at: string;
+  visits: { visit_date: string } | null;
+};
+type VisitLine = { visit_id: string; procedure_id: string | null; quantity: number | null; products: Product | null };
 
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+function dateKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default async function MarginPage() {
@@ -40,33 +50,38 @@ export default async function MarginPage() {
           id, name, price,
           procedure_supplies ( quantity, is_dosed, products ( cost_per_unit ) )
         ),
-        treatment_logs ( id, procedure_id, created_at ),
-        treatment_log_areas ( treatment_log_id, quantity, products ( cost_per_unit ) )
+        treatment_logs ( id, procedure_id, visit_id, created_at, visits ( visit_date ) ),
+        visit_lines ( visit_id, procedure_id, quantity, products ( cost_per_unit ) )
       )`
     )
     .eq("id", user.id)
     .single();
 
   const clinic = profile?.clinics as unknown as
-    | { id: string; name: string; procedures: Procedure[]; treatment_logs: Log[]; treatment_log_areas: AreaRow[] }
+    | { id: string; name: string; procedures: Procedure[]; treatment_logs: Log[]; visit_lines: VisitLine[] }
     | null;
 
   if (!clinic) {
     redirect("/app");
   }
 
+  // A log counts in the month of its visit date, so a visit logged a day
+  // late still lands in the right month.
   const monthStart = startOfMonth(new Date());
-  const logsThisMonth = (clinic.treatment_logs || []).filter((l) => new Date(l.created_at) >= monthStart);
+  const monthStartKey = dateKey(monthStart);
+  const logsThisMonth = (clinic.treatment_logs || []).filter((l) =>
+    l.visits ? l.visits.visit_date >= monthStartKey : new Date(l.created_at) >= monthStart
+  );
 
-  // Group this month's area entries (from the face-diagram feature) by the
-  // log they belong to, so a log's real area cost can be added to its
-  // procedure's fixed (non-dosed) recipe cost — see the hybrid cost model
-  // below.
-  const areasByLogId = new Map<string, AreaRow[]>();
-  for (const area of clinic.treatment_log_areas || []) {
-    const list = areasByLogId.get(area.treatment_log_id) || [];
-    list.push(area);
-    areasByLogId.set(area.treatment_log_id, list);
+  // A visit's product lines for each procedure — the real dose, used in
+  // place of the recipe's dosed line (same rule log_visit deducts by).
+  const productLinesByVisitProcedure = new Map<string, VisitLine[]>();
+  for (const line of clinic.visit_lines || []) {
+    if (!line.procedure_id || line.quantity == null) continue;
+    const key = `${line.visit_id}|${line.procedure_id}`;
+    const list = productLinesByVisitProcedure.get(key) || [];
+    list.push(line);
+    productLinesByVisitProcedure.set(key, list);
   }
 
   const rows = (clinic.procedures || [])
@@ -75,23 +90,21 @@ export default async function MarginPage() {
       const count = procLogs.length;
       if (count === 0) return null;
 
-      // Today's existing number: every recipe line (fixed + dosed) at its
-      // fixed quantity — unchanged, used whenever a log has no area entries.
+      // No product lines: every recipe line at its fixed quantity.
       const fullRecipeCost = proc.procedure_supplies.reduce(
         (sum, s) => sum + s.quantity * (s.products?.cost_per_unit ?? 0),
         0
       );
-      // Just the fixed (non-dosed) lines — used alongside a log's real area
-      // cost, so the dosed line's recipe default is never double-counted.
+      // With product lines: the fixed lines, plus the lines' real cost.
       const fixedRecipeCost = proc.procedure_supplies
         .filter((s) => !s.is_dosed)
         .reduce((sum, s) => sum + s.quantity * (s.products?.cost_per_unit ?? 0), 0);
 
       const totalCost = procLogs.reduce((sum, log) => {
-        const areaRows = areasByLogId.get(log.id);
-        if (areaRows && areaRows.length > 0) {
-          const areaCost = areaRows.reduce((s, a) => s + a.quantity * (a.products?.cost_per_unit ?? 0), 0);
-          return sum + fixedRecipeCost + areaCost;
+        const lines = log.visit_id ? productLinesByVisitProcedure.get(`${log.visit_id}|${proc.id}`) : undefined;
+        if (lines && lines.length > 0) {
+          const linesCost = lines.reduce((s, l) => s + (l.quantity ?? 0) * (l.products?.cost_per_unit ?? 0), 0);
+          return sum + fixedRecipeCost + linesCost;
         }
         return sum + fullRecipeCost;
       }, 0);
